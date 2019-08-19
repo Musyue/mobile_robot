@@ -2,12 +2,12 @@ nDeviceType: 4 #设备类型USBCAN-2A or USBCAN-2C or CANalyst-II
 nDeviceInd: 0 #设备索引
 nCanId: 0 # 0-->1通道 1-->2通道
 walking_channel:
-  chn1: 601  # front walking wheels
-  chn2: 602  # rear walking wheels
+  chn1: 0x00000601  # front walking wheels
+  chn2: 0x00000602  # rear walking wheels
 
 steering_channel:
-  chn1: 603  # front steering wheels
-  chn2: 604  # rear steering wheels
+  chn1: 0x00000603 # front steering wheels
+  chn2: 0x00000604  # rear steering wheels
 # mode of motors (steering && walking)
 # 0 -> position; 1 -> velocity; 2 -> current
 Frames_Length: 1 # 每次发送几帧
@@ -18,3 +18,4 @@ Homing_abs_encoder_data:
   fr: 29262  # corresponding impulse of steering motor (front right)
   rl: 30036 # corresponding impulse of steering motor (rear left)
   rr: 27800  # corresponding impulse of steering motor (rear right)
+Homing_error_limit: 10

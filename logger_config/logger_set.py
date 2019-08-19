@@ -32,7 +32,7 @@ class LoggerSetClass:
             # 以append模式打开日志文件
             fh = RotatingFileHandler(logfile, mode='a', maxBytes=1024*1024*50, backupCount=30)
             # 输出到file的log等级的开关
-            fh.setLevel(logging.INFO)
+            fh.setLevel(logging.ERROR)
             # 为文件输出设定格式
             fh.setFormatter(formatter)
             # 设置文件输出到logger
@@ -40,7 +40,7 @@ class LoggerSetClass:
             # 再创建一个handler，用于输出到控制台
             ch = logging.StreamHandler()
             # 输出到console的log等级的开关
-            ch.setLevel(logging.INFO)
+            ch.setLevel(logging.ERROR)
             # 控制台输出设定格式
             ch.setFormatter(formatter)
             # 设置控制台输出到logger
@@ -49,7 +49,7 @@ class LoggerSetClass:
             # 再创建一个handler，用于输出到控制台
             ch = logging.StreamHandler()
             # 输出到console的log等级的开关
-            ch.setLevel(logging.INFO)
+            ch.setLevel(logging.ERROR)
             # 控制台输出设定格式
             ch.setFormatter(formatter)
             # 设置控制台输出到logger

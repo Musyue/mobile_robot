@@ -224,16 +224,53 @@ class CanAnalysisDriver:
         else:
             self.logger.loggerinfo("Can Analysis Data Transmit Success!!")
             self.logger.loggerinfo(Canstatus)
-            return Canstatus  
+            return Canstatus 
+    def Can_New_Receive(self,CanInd,Len): 
+        # ubyte_array=c_ubyte*8
+        # a = ubyte_array(0, 0, 0, 0, 0, 0, 0, 0)
+        # ubyte_3array = c_ubyte*3
+        # b = ubyte_3array(0, 0 , 0)
+        vci_can_obj = (Len*VCI_CAN_OBJ)()
+        Canstatus=self.OpreateCanAnalysis.VCI_Receive(self.yamlDic['nDeviceType'],self.yamlDic['nDeviceInd'],CanInd,vci_can_obj,Len,0)
+        if Canstatus== -1:
+            self.logger.loggererror("Can analysis offline!")
+            self.logger.loggererror(Canstatus)
+        elif Canstatus==0:
+            self.logger.loggererror("Can Analysis Receive No data!!")
+            self.logger.loggererror(Canstatus)
+        else:
+            self.logger.loggerinfo("Can Analysis Receive Success!!")
+            self.logger.loggerinfo(Canstatus)
+        return Canstatus,vci_can_obj
     def Can_Receive_PyInit(self,CanInd,Len,WaitTime,VCI_CAN_OBJ_STRUC):
         CanFuncStruc=self.OpreateCanAnalysis.VCI_Receive#(self.yamlDic['nDeviceType'],self.yamlDic['nDeviceInd'],CanInd,)
         CanFuncStruc.restype = c_uint
         CanFuncStruc.argtypes=[c_uint,c_uint,c_uint,POINTER(VCI_CAN_OBJ),c_ulong,c_int]
         return CanFuncStruc(self.yamlDic['nDeviceType'],self.yamlDic['nDeviceInd'],CanInd,byref(VCI_CAN_OBJ_STRUC),Len,WaitTime)
 
- 
+    def Can_Mult_Receive(self,CanInd,Len):
+        config=(Len*VCI_CAN_OBJ)()
+
+        # ubyte_array = c_ubyte*8
+        # a = ubyte_array(0, 0, 0, 0, 0, 0, 0, 0)
+        # ubyte_3array = c_ubyte*3
+        # b = ubyte_3array(0, 0 , 0)
+        # config = VCI_CAN_OBJ(0x0, 0, 0, 0, 0, 0,  8, a, b)
+
+        Canstatus=self.Can_Receive_PyInit(CanInd,Len,0,config)
+        if Canstatus== -1:
+            self.logger.loggererror("Can analysis offline!")
+            self.logger.loggererror(Canstatus)
+        elif Canstatus==0:
+            self.logger.loggererror("Can Analysis Receive No data!!")
+            self.logger.loggererror(Canstatus)
+        else:
+            self.logger.loggerinfo("Can Analysis Receive Success!!")
+            self.logger.loggerinfo(Canstatus)
+            return Canstatus,config
     def Can_Receive(self,CanInd,Len):
         config=VCI_CAN_OBJ()
+
         # ubyte_array = c_ubyte*8
         # a = ubyte_array(0, 0, 0, 0, 0, 0, 0, 0)
         # ubyte_3array = c_ubyte*3
@@ -287,51 +324,55 @@ def main():
     count=5
     if renum>0:
         while count:
-            
+            renum=md.Can_GetReceiveNum(0)
+            print("Can_GetReceiveNum",renum)
             transmit_status=md.Can_Transmit(0,1,1,8,comd.REQUEST_ENCODER_1)
             if transmit_status:
                 # time.sleep(0.1)
-                ret,kk=md.Can_Receive(0,1)
+                ret,kk=md.Can_New_Receive(0,renum)
                 if ret:
-                    if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
-                        print('my data 1',list(kk.Data))
-                        print(kk.DataLen)
+                    for i in range(len(kk)):
+                        print('my data 1',list(kk[i].Data))
+
+                    # if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
+                    #     print('my data 1',list(kk.Data))
+                    #     print(kk.DataLen)
             else:
                 print('my data 2',list(kk.Data))
                 print(kk.DataLen)
-            transmit_status=md.Can_Transmit(0,1,2,8,comd.REQUEST_ENCODER_2)
-            if transmit_status:
-                # time.sleep(0.1)
-                ret,kk=md.Can_Receive(0,1)
-                if ret:
-                    if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
-                        print('my data 2',list(kk.Data))
-                        print(kk.DataLen)
-            else:
-                print('my data 2',list(kk.Data))
-                print(kk.DataLen)
-            transmit_status=md.Can_Transmit(0,1,3,8,comd.REQUEST_ENCODER_3)
-            if transmit_status:
-                # time.sleep(0.1)
-                ret,kk=md.Can_Receive(0,1)
-                if ret:
-                    if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
-                        print('my data 3',list(kk.Data))
-                        print(kk.DataLen)
-            else:
-                print('my data 3',list(kk.Data))
-                print(kk.DataLen)
-            transmit_status=md.Can_Transmit(0,1,4,8,comd.REQUEST_ENCODER_4)
-            if transmit_status:
-                # time.sleep(0.1)
-                ret,kk=md.Can_Receive(0,1)
-                if ret:
-                    if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
-                        print('my data 4',list(kk.Data))
-                        print(kk.DataLen)
-            else:
-                print('my data 4',list(kk.Data))
-                print(kk.DataLen)
+            # transmit_status=md.Can_Transmit(0,1,2,8,comd.REQUEST_ENCODER_2)
+            # if transmit_status:
+            #     # time.sleep(0.1)
+            #     ret,kk=md.Can_Receive(0,1)
+            #     if ret:
+            #         if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
+            #             print('my data 2',list(kk.Data))
+            #             print(kk.DataLen)
+            # else:
+            #     print('my data 2',list(kk.Data))
+            #     print(kk.DataLen)
+            # transmit_status=md.Can_Transmit(0,1,3,8,comd.REQUEST_ENCODER_3)
+            # if transmit_status:
+            #     # time.sleep(0.1)
+            #     ret,kk=md.Can_Receive(0,1)
+            #     if ret:
+            #         if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
+            #             print('my data 3',list(kk.Data))
+            #             print(kk.DataLen)
+            # else:
+            #     print('my data 3',list(kk.Data))
+            #     print(kk.DataLen)
+            # transmit_status=md.Can_Transmit(0,1,4,8,comd.REQUEST_ENCODER_4)
+            # if transmit_status:
+            #     # time.sleep(0.1)
+            #     ret,kk=md.Can_Receive(0,1)
+            #     if ret:
+            #         if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
+            #             print('my data 4',list(kk.Data))
+            #             print(kk.DataLen)
+            # else:
+            #     print('my data 4',list(kk.Data))
+            #     print(kk.DataLen)
             count-=1
     md.Can_VCICloseDevice()
     # md.OpreateCanAnalysis.VCI_CloseDevice(4, 0,0)
