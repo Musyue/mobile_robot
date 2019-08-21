@@ -13,11 +13,6 @@ import time
 from mobile_control.mobileplatform_driver import *
 import binascii
 from pid_control.pid_control import *
-import matplotlib
-matplotlib.use("TkAgg")
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.interpolate import spline
 class MobilePlatFormHoming():
     def __init__(self,):
         self.MobileControl=MobilePlatformDriver()#init can analysis
@@ -36,7 +31,6 @@ class MobilePlatFormHoming():
         self.rr_abs_encode=self.MobileControl.CanAnalysis.yamlDic['Homing_abs_encoder_data']['rr']
         self.limit_error=self.MobileControl.CanAnalysis.yamlDic['Homing_error_limit']
         self.home_ok_flag={}
-        self.Pid=PID()
     def List_to_HEXList(self,Listdata):
         temp=[]
         for i in Listdata:
@@ -66,25 +60,25 @@ class MobilePlatFormHoming():
                 if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and list(kk[i].Data)[1]==1:
                     print('abs encoder 1',self.List_to_HEXList(list(kk[i].Data)))
                     # print(kk[i].DataLen)
-                    # self.Abs_Encoder_fl_id1.append(self.List_to_HEXList(list(kk[i].Data)))
+                    self.Abs_Encoder_fl_id1.append(self.List_to_HEXList(list(kk[i].Data)))
                     self.Abs_Encoder_fl_id1_oct=self.HEX_String_List_To_Oct(list(kk[i].Data))
                     self.MobileControl.logger.loggerinfo(self.HEX_String_List_To_Oct(list(kk[i].Data)))
                 if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and list(kk[i].Data)[1]==2:
                     print('abs encoder 2',self.List_to_HEXList(list(kk[i].Data)))
                     # print(kk[i].DataLen)
-                    # self.Abs_Encoder_fr_id2.append(self.List_to_HEXList(list(kk[i].Data)))
+                    self.Abs_Encoder_fr_id2.append(self.List_to_HEXList(list(kk[i].Data)))
                     self.Abs_Encoder_fr_id2_oct=self.HEX_String_List_To_Oct(list(kk[i].Data))
                     self.MobileControl.logger.loggerinfo(self.HEX_String_List_To_Oct(list(kk[i].Data)))
                 if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and list(kk[i].Data)[1]==3:
                     print('abs Encoder 3',self.List_to_HEXList(list(kk[i].Data)))
                     # print(kk[i].DataLen)
-                    # self.Abs_Encoder_rl_id3.append(self.List_to_HEXList(list(kk[i].Data)))
+                    self.Abs_Encoder_rl_id3.append(self.List_to_HEXList(list(kk[i].Data)))
                     self.MobileControl.logger.loggerinfo(self.HEX_String_List_To_Oct(list(kk[i].Data)))
                     self.Abs_Encoder_rl_id3_oct=self.HEX_String_List_To_Oct(list(kk[i].Data))
                 if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127and list(kk[i].Data)[1]==4:
                     print('abs Encoder 4',self.List_to_HEXList(list(kk[i].Data)))
                     # print(kk[i].DataLen)
-                    # self.Abs_Encoder_rr_id4.append(self.List_to_HEXList(list(kk[i].Data)))
+                    self.Abs_Encoder_rr_id4.append(self.List_to_HEXList(list(kk[i].Data)))
                     self.Abs_Encoder_rr_id4_oct=self.HEX_String_List_To_Oct(list(kk[i].Data))
                     self.MobileControl.logger.loggerinfo(self.HEX_String_List_To_Oct(list(kk[i].Data)))             
 
@@ -149,67 +143,9 @@ class MobilePlatFormHoming():
         time.sleep(0.1)
         self.MobileControl.Enable_Steering_Controller()
         time.sleep(0.1)
-    def Init_Pid_Control(self,P,I,D,windup,sampletime):
-        self.Pid.setKp(P)
-        self.Pid.setKi(I)
-        self.Pid.setKd(D)
-        self.Pid.setWindup(windup)
-        self.Pid.setSampleTime(sampletime)    
+
         # self.MobileControl.Save_Parameter('steer')
-    def Run_Four_Steer_Motor_New(self):
-        if self.Abs_Encoder_fl_id1_oct!=0:
-            # self.MobileControl.logger.loggererror('steer_chn1_left'+'-------->'+str(self.fl_abs_encode)+'---------'+str(self.Abs_Encoder_fl_id1_oct)+'--------------->'+str(abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)))
-            if self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct <=0:
-                self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.BASIC_LEFT_TEST_NEG_200_VELOCITY_COMMAND)
-                time.sleep(0.1)
-            else:
-                self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.BASIC_LEFT_TEST_200_VELOCITY_COMMAND)
-                time.sleep(0.1)
-        else:
-            pass
-
-        if self.Abs_Encoder_fr_id2_oct!=0:
-             # self.MobileControl.logger.loggererror('steer_chn1_left'+'-------->'+str(self.fl_abs_encode)+'---------'+str(self.Abs_Encoder_fl_id1_oct)+'--------------->'+str(abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)))
-            if self.fr_abs_encode-self.Abs_Encoder_fr_id2_oct <=0:
-                self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.BASIC_RIGHT_TEST_NEG_200_VELOCITY_COMMAND)
-                time.sleep(0.1)
-            else:
-                self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.BASIC_RIGHT_TEST_200_VELOCITY_COMMAND)
-                time.sleep(0.1)
-        else:
-            pass
-
-        if self.Abs_Encoder_rl_id3_oct!=0:
-            # self.MobileControl.logger.loggererror('steer_chn1_left'+'-------->'+str(self.fl_abs_encode)+'---------'+str(self.Abs_Encoder_fl_id1_oct)+'--------------->'+str(abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)))
-            if self.rl_abs_encode-self.Abs_Encoder_rl_id3_oct <=0:
-                self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.BASIC_LEFT_TEST_NEG_200_VELOCITY_COMMAND)
-                time.sleep(0.1)
-            else:
-                self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.BASIC_LEFT_TEST_200_VELOCITY_COMMAND)
-                time.sleep(0.1)
-        else:
-            pass
-
-        if self.Abs_Encoder_rr_id4_oct!=0:
-            # self.MobileControl.logger.loggererror('steer_chn1_left'+'-------->'+str(self.fl_abs_encode)+'---------'+str(self.Abs_Encoder_fl_id1_oct)+'--------------->'+str(abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)))
-            if self.rr_abs_encode-self.Abs_Encoder_rr_id4_oct <=0:
-                self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.BASIC_RIGHT_TEST_NEG_200_VELOCITY_COMMAND)
-                time.sleep(0.1)
-            else:
-                self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.BASIC_RIGHT_TEST_200_VELOCITY_COMMAND)
-                time.sleep(0.1)
-        else:
-            pass
-    
-    def Homing(self,vel):
-        if self.Abs_Encoder_fl_id1_oct!=0:
-            self.MobileControl.logger.loggererror('steer_chn1_left'+'-------->'+str(self.fl_abs_encode)+'---------'+str(self.Abs_Encoder_fl_id1_oct)+'--------------->'+str(abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)))
-            
-            if abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)<=self.limit_error:
-                self.Stop_Four_Steer_Motor('steer_chn1_left')
-                self.MobileControl.logger.loggererror("steer homing fl ok!!!!!")
-                self.home_ok_flag.update({'steer_chn1_left':1})
-    def Homing_1(self):
+    def Homing(self):
         if self.Abs_Encoder_fl_id1_oct!=0:
             self.MobileControl.logger.loggererror('steer_chn1_left'+'-------->'+str(self.fl_abs_encode)+'---------'+str(self.Abs_Encoder_fl_id1_oct)+'--------------->'+str(abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)))
             if abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)<=self.limit_error:
@@ -251,89 +187,36 @@ class MobilePlatFormHoming():
             # self.MobileControl.logger.loggerinfo("Please wait homing progress!!!")
         # return home_ok_flag
 def main():
-    P=10.2
-    I=1.5
-    D=0.001
-    windup=20
-    sampletime=0.01
     mpfh=MobilePlatFormHoming()
     mpfh.Init_mobile_platform()
-    mpfh.Init_Pid_Control(P,I,D,windup,sampletime)
     count=1
     flag=0
     recevenum=0
     flag_1=1
-    END=100
-    feedback=0
-    feedback_list = []
-    time_list = []
-    setpoint_list = []
     if flag:
         mpfh.Stop_Four_Steer_Motor('all')
     else:
-        for i in range(1, END):
+        # mpfh.Run_Four_Steer_Motor('all')
+        # time.sleep(0.4)
+        while count:
             recevenum=mpfh.MobileControl.CanAnalysis.Can_GetReceiveNum(0)
             print("RECENUM------->",recevenum)
-            print 'i',i
+
             if recevenum!=None:
                 if flag_1==1 and mpfh.Abs_Encoder_fr_id2_oct!=0 and mpfh.Abs_Encoder_fl_id1_oct!=0 and mpfh.Abs_Encoder_rr_id4_oct!=0 and mpfh.Abs_Encoder_rl_id3_oct!=0:
-                    mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
-                    time.sleep(0.01)
-                    print "mpfh.Abs_Encoder_fr_id2_oct",mpfh.Abs_Encoder_fr_id2_oct
-                    print "mpfh.Abs_Encoder_fl_id1_oct",mpfh.Abs_Encoder_fl_id1_oct
-                    print "mpfh.Abs_Encoder_rl_id3_oct",mpfh.Abs_Encoder_rl_id3_oct
-                    print "mpfh.Abs_Encoder_rr_id4_oct",mpfh.Abs_Encoder_rr_id4_oct
-                    # if mpfh.rl_abs_encode-mpfh.Abs_Encoder_rl_id3_oct<0:
-                    mpfh.Pid.update(feedback)
-                    output = mpfh.Pid.output
-                    print "output",output
-                    if mpfh.Pid.SetPoint > 0:
-                        feedback =(mpfh.Abs_Encoder_rl_id3_oct*50)/1024# (output - (1/i))控制系统的函数
-                        print "Feedback",feedback
-                    if i>1:
-                        mpfh.Pid.SetPoint = (mpfh.rl_abs_encode*50)/1024
-                        print "(mpfh.rl_abs_encode*50)/1024",(mpfh.rl_abs_encode*50)/1024
-                    mpfh.MobileControl.Send_Velocity_Driver(output,'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                    time.sleep(0.01)
-                    feedback_list.append(feedback)
-                    setpoint_list.append(mpfh.Pid.SetPoint)
-                    time_list.append(i)
-                    if abs(mpfh.Pid.Error)<=1:
-                        mpfh.MobileControl.Send_Velocity_Driver(0,'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                    
+                    mpfh.Run_Four_Steer_Motor_New()
+                    flag_1=0
                 else:
                     mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
-                    print "read data"
+                    mpfh.Homing()
+                    count+=1
                     time.sleep(0.1)
-                # if flag_1==1 and mpfh.Abs_Encoder_fr_id2_oct!=0 and mpfh.Abs_Encoder_fl_id1_oct!=0 and mpfh.Abs_Encoder_rr_id4_oct!=0 and mpfh.Abs_Encoder_rl_id3_oct!=0:
-                #     # mpfh.Run_Four_Steer_Motor_New()
-                #     flag_1=0
-                # else:
-                #     mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
-                #     mpfh.Homing()
-                #     count+=1
-                #     time.sleep(0.1)
-                #     print(mpfh.home_ok_flag)
-                #     if mpfh.home_ok_flag.has_key('steer_chn1_left') and mpfh.home_ok_flag.has_key('steer_chn1_right') and mpfh.home_ok_flag.has_key('steer_chn2_left') and mpfh.home_ok_flag.has_key('steer_chn2_right'):
-                #         if mpfh.home_ok_flag['steer_chn1_left']==1 and mpfh.home_ok_flag['steer_chn1_right']==1 and mpfh.home_ok_flag['steer_chn2_left']==1 and mpfh.home_ok_flag['steer_chn2_right']==1:
-                #             mpfh.MobileControl.logger.loggerinfo("------------------!!!!!!Homing is over !!!!!!-----------","LIGHT_RED")
-                #             break
-    time_sm = np.array(time_list)
-    time_smooth = np.linspace(time_sm.min(), time_sm.max(), 300)
-    feedback_smooth = spline(time_list, feedback_list, time_smooth)
-    plt.figure(0)
-    plt.plot(time_smooth, feedback_smooth)
-    plt.plot(time_list, setpoint_list)
-    plt.xlim((0, END))
-    plt.ylim((min(feedback_list)-0.5, max(feedback_list)+0.5))
-    plt.xlabel('time (s)')
-    plt.ylabel('PID (PV)')
-    plt.title('TEST PID')
-
-    plt.ylim((1-2000.5, 1+2000.5))
-    # plt.ylim((1-0.5, 1+0.5))
-    plt.grid(True)
-    plt.show()            
+                    print(mpfh.home_ok_flag)
+                    if mpfh.home_ok_flag.has_key('steer_chn1_left') and mpfh.home_ok_flag.has_key('steer_chn1_right') and mpfh.home_ok_flag.has_key('steer_chn2_left') and mpfh.home_ok_flag.has_key('steer_chn2_right'):
+                        if mpfh.home_ok_flag['steer_chn1_left']==1 and mpfh.home_ok_flag['steer_chn1_right']==1 and mpfh.home_ok_flag['steer_chn2_left']==1 and mpfh.home_ok_flag['steer_chn2_right']==1:
+                            mpfh.MobileControl.logger.loggerinfo("------------------!!!!!!Homing is over !!!!!!-----------","LIGHT_RED")
+                            break
+                
     mpfh.MobileControl.CanAnalysis.Can_VCICloseDevice()
 if __name__=="__main__":
     main()
