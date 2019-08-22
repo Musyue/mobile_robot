@@ -64,25 +64,25 @@ class MobilePlatFormHoming():
         if ret:
             for i in range(RecNum):
                 if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and list(kk[i].Data)[1]==1:
-                    print('abs encoder 1',self.List_to_HEXList(list(kk[i].Data)))
+                    # print('abs encoder 1',self.List_to_HEXList(list(kk[i].Data)))
                     # print(kk[i].DataLen)
                     # self.Abs_Encoder_fl_id1.append(self.List_to_HEXList(list(kk[i].Data)))
                     self.Abs_Encoder_fl_id1_oct=self.HEX_String_List_To_Oct(list(kk[i].Data))
                     self.MobileControl.logger.loggerinfo(self.HEX_String_List_To_Oct(list(kk[i].Data)))
                 if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and list(kk[i].Data)[1]==2:
-                    print('abs encoder 2',self.List_to_HEXList(list(kk[i].Data)))
+                    # print('abs encoder 2',self.List_to_HEXList(list(kk[i].Data)))
                     # print(kk[i].DataLen)
                     # self.Abs_Encoder_fr_id2.append(self.List_to_HEXList(list(kk[i].Data)))
                     self.Abs_Encoder_fr_id2_oct=self.HEX_String_List_To_Oct(list(kk[i].Data))
                     self.MobileControl.logger.loggerinfo(self.HEX_String_List_To_Oct(list(kk[i].Data)))
                 if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and list(kk[i].Data)[1]==3:
-                    print('abs Encoder 3',self.List_to_HEXList(list(kk[i].Data)))
+                    # print('abs Encoder 3',self.List_to_HEXList(list(kk[i].Data)))
                     # print(kk[i].DataLen)
                     # self.Abs_Encoder_rl_id3.append(self.List_to_HEXList(list(kk[i].Data)))
                     self.MobileControl.logger.loggerinfo(self.HEX_String_List_To_Oct(list(kk[i].Data)))
                     self.Abs_Encoder_rl_id3_oct=self.HEX_String_List_To_Oct(list(kk[i].Data))
                 if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127and list(kk[i].Data)[1]==4:
-                    print('abs Encoder 4',self.List_to_HEXList(list(kk[i].Data)))
+                    # print('abs Encoder 4',self.List_to_HEXList(list(kk[i].Data)))
                     # print(kk[i].DataLen)
                     # self.Abs_Encoder_rr_id4.append(self.List_to_HEXList(list(kk[i].Data)))
                     self.Abs_Encoder_rr_id4_oct=self.HEX_String_List_To_Oct(list(kk[i].Data))
@@ -250,9 +250,26 @@ class MobilePlatFormHoming():
             self.MobileControl.logger.loggerinfo("please wait encoder 4 feedback data","LIGHT_RED")
             # self.MobileControl.logger.loggerinfo("Please wait homing progress!!!")
         # return home_ok_flag
+    def Pid_control_Performance(self,feedback_list,setpoint_list,time_list,figure_num,END):
+        time_sm = np.array(time_list)
+        time_smooth = np.linspace(time_sm.min(), time_sm.max(), 300)
+        feedback_smooth = spline(time_list, feedback_list, time_smooth)
+        plt.figure(figure_num)
+        plt.plot(time_smooth, feedback_smooth)
+        plt.plot(time_list, setpoint_list)
+        plt.xlim((0, END))
+        plt.ylim((min(feedback_list)-0.5, max(feedback_list)+0.5))
+        plt.xlabel('time (s)')
+        plt.ylabel('PID (PV)')
+        plt.title(str(figure_num)+'TEST PID')
+
+        plt.ylim((1-60000.5, 1+60000.5))
+        # plt.ylim((1-0.5, 1+0.5))
+        plt.grid(True)
+        plt.show()
 def main():
-    P=10.2
-    I=1.5
+    P=0.5#0.8
+    I=0.3
     D=0.001
     windup=20
     sampletime=0.01
@@ -263,77 +280,142 @@ def main():
     flag=0
     recevenum=0
     flag_1=1
+    count_num_fl=0
+    count_num_fr=0
+    count_num_rl=0
+    count_num_rr=0
+    flag_fl =0# 'fl'
+    flag_fr='fr'
+    flag_rl=0#'rl'
+    flag_rr='rr'
     END=100
-    feedback=0
-    feedback_list = []
-    time_list = []
-    setpoint_list = []
+    ######fl
+    output_fl=[]
+    output_fr=[]
+    output_rl=[]
+    output_rr=[]
+    feedback_fl=0
+    feedback_list_fl = []
+    time_list_fl = []
+    setpoint_list_fl = []
+    #####fr
+    feedback_fr=0
+    feedback_list_fr = []
+    time_list_fr = []
+    setpoint_list_fr = []
+    #####rl
+    feedback_rl=0
+    feedback_list_rl = []
+    time_list_rl = []
+    setpoint_list_rl = []
+    #######rr
+    feedback_rr=0
+    feedback_list_rr = []
+    time_list_rr = []
+    setpoint_list_rr = []
+    #######
     if flag:
         mpfh.Stop_Four_Steer_Motor('all')
     else:
         for i in range(1, END):
             recevenum=mpfh.MobileControl.CanAnalysis.Can_GetReceiveNum(0)
-            print("RECENUM------->",recevenum)
+            # print("RECENUM------->",recevenum)
             print 'i',i
             if recevenum!=None:
                 if flag_1==1 and mpfh.Abs_Encoder_fr_id2_oct!=0 and mpfh.Abs_Encoder_fl_id1_oct!=0 and mpfh.Abs_Encoder_rr_id4_oct!=0 and mpfh.Abs_Encoder_rl_id3_oct!=0:
                     mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
-                    time.sleep(0.01)
-                    print "mpfh.Abs_Encoder_fr_id2_oct",mpfh.Abs_Encoder_fr_id2_oct
-                    print "mpfh.Abs_Encoder_fl_id1_oct",mpfh.Abs_Encoder_fl_id1_oct
-                    print "mpfh.Abs_Encoder_rl_id3_oct",mpfh.Abs_Encoder_rl_id3_oct
-                    print "mpfh.Abs_Encoder_rr_id4_oct",mpfh.Abs_Encoder_rr_id4_oct
-                    # if mpfh.rl_abs_encode-mpfh.Abs_Encoder_rl_id3_oct<0:
-                    mpfh.Pid.update(feedback)
-                    output = mpfh.Pid.output
-                    print "output",output
-                    if mpfh.Pid.SetPoint > 0:
-                        feedback =(mpfh.Abs_Encoder_rl_id3_oct*50)/1024# (output - (1/i))控制系统的函数
-                        print "Feedback",feedback
-                    if i>1:
-                        mpfh.Pid.SetPoint = (mpfh.rl_abs_encode*50)/1024
-                        print "(mpfh.rl_abs_encode*50)/1024",(mpfh.rl_abs_encode*50)/1024
-                    mpfh.MobileControl.Send_Velocity_Driver(output,'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                    time.sleep(0.01)
-                    feedback_list.append(feedback)
-                    setpoint_list.append(mpfh.Pid.SetPoint)
-                    time_list.append(i)
-                    if abs(mpfh.Pid.Error)<=1:
-                        mpfh.MobileControl.Send_Velocity_Driver(0,'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                     
+                    # time.sleep(0.01)
+                    print "-----Abs_Encoder_fr_id2_oct",mpfh.Abs_Encoder_fr_id2_oct
+                    print "-----Abs_Encoder_fl_id1_oct",mpfh.Abs_Encoder_fl_id1_oct
+                    print "-----Abs_Encoder_rl_id3_oct",mpfh.Abs_Encoder_rl_id3_oct
+                    print "-----Abs_Encoder_rr_id4_oct",mpfh.Abs_Encoder_rr_id4_oct
+                    # if mpfh.rl_abs_encode-mpfh.Abs_Encoder_rl_id3_oct<0:
+                    if flag_fl == 'fl':
+                        fl_error=mpfh.fl_abs_encode-mpfh.Abs_Encoder_fl_id1_oct
+                        print "-----fl error----",fl_error
+
+                        output_fl.append(fl_error)
+
+                        if len(output_fl)>3:
+                            velocity_control=mpfh.Pid.Kp*(output_fl[count_num_fl]-output_fl[count_num_fl-1])+mpfh.Pid.Ki*output_fl[count_num_fl]+mpfh.Pid.Kd*(output_fl[count_num_fl]-2*output_fl[count_num_fl-1]+output_fl[count_num_fl-2])
+                            out_vel=(velocity_control*60*50)/1024
+                            print "out_vel-----fl",out_vel
+                            mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                            print "count num",count_num_fl
+
+                        if abs(fl_error)<=3:
+                            mpfh.MobileControl.Send_Velocity_Driver(0,'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                            flag_fl=0
+                            # count_num_fl=0
+                            output_fl=[]
+
+                        count_num_fl+=1
+                    if flag_fr == 'fr':
+                        fr_error=mpfh.fr_abs_encode-mpfh.Abs_Encoder_fr_id2_oct
+                        print "-----fr error----",fr_error
+
+                        output_fr.append(fr_error)
+
+                        if len(output_fr)>3:
+                            velocity_control=mpfh.Pid.Kp*(output_fr[count_num_fr]-output_fr[count_num_fr-1])+mpfh.Pid.Ki*output_fr[count_num_fr]+mpfh.Pid.Kd*(output_fr[count_num_fr]-2*output_fr[count_num_fr-1]+output_fr[count_num_fr-2])
+                            out_vel=(velocity_control*60*50)/1024
+                            print "out_vel-----fr",out_vel
+                            mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                            print "count num",count_num_fr
+
+                        if abs(fr_error)<=3:
+                            mpfh.MobileControl.Send_Velocity_Driver(0,'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                            flag_fr=0
+                            # count_num_fr=0
+                            output_fr=[]
+
+                        count_num_fr+=1
+                    if flag_rl == 'rl':
+                        rl_error=mpfh.rl_abs_encode-mpfh.Abs_Encoder_rl_id3_oct
+                        print "-----rl error----",rl_error
+
+                        output_rl.append(rl_error)
+
+                        if len(output_rl)>3:
+                            velocity_control=mpfh.Pid.Kp*(output_rl[count_num_rl]-output_rl[count_num_rl-1])+mpfh.Pid.Ki*output_rl[count_num_rl]+mpfh.Pid.Kd*(output_rl[count_num_rl]-2*output_rl[count_num_rl-1]+output_rl[count_num_rl-2])
+                            out_vel=(velocity_control*60*50)/1024
+                            print "out_vel-----rl",out_vel
+                            mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                            print "count num",count_num_rl
+
+                        if abs(rl_error)<=3:
+                            mpfh.MobileControl.Send_Velocity_Driver(0,'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                            flag_rl=0
+                            # count_num_rl=0
+                            output_rl=[]
+
+                        count_num_rl+=1
+                    if flag_rr == 'rr':
+                        rr_error=mpfh.rr_abs_encode-mpfh.Abs_Encoder_rr_id4_oct
+                        print "-----rr error----",rr_error
+
+                        output_rr.append(rr_error)
+
+                        if len(output_rr)>3:
+                            velocity_control=mpfh.Pid.Kp*(output_rr[count_num_rr]-output_rr[count_num_rr-1])+mpfh.Pid.Ki*output_rr[count_num_rr]+mpfh.Pid.Kd*(output_rr[count_num_rr]-2*output_rr[count_num_rr-1]+output_rr[count_num_rr-2])
+                            out_vel=(velocity_control*60*50)/1024
+                            print "out_vel-----rr",out_vel
+                            mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                            print "count num",count_num_rr
+
+                        if abs(rr_error)<=3:
+                            mpfh.MobileControl.Send_Velocity_Driver(0,'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                            flag_rr=0
+                            # count_num_rr=0
+                            output_rr=[]
+
+                        count_num_rr+=1
+                                                                      
                 else:
                     mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
                     print "read data"
-                    time.sleep(0.1)
-                # if flag_1==1 and mpfh.Abs_Encoder_fr_id2_oct!=0 and mpfh.Abs_Encoder_fl_id1_oct!=0 and mpfh.Abs_Encoder_rr_id4_oct!=0 and mpfh.Abs_Encoder_rl_id3_oct!=0:
-                #     # mpfh.Run_Four_Steer_Motor_New()
-                #     flag_1=0
-                # else:
-                #     mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
-                #     mpfh.Homing()
-                #     count+=1
-                #     time.sleep(0.1)
-                #     print(mpfh.home_ok_flag)
-                #     if mpfh.home_ok_flag.has_key('steer_chn1_left') and mpfh.home_ok_flag.has_key('steer_chn1_right') and mpfh.home_ok_flag.has_key('steer_chn2_left') and mpfh.home_ok_flag.has_key('steer_chn2_right'):
-                #         if mpfh.home_ok_flag['steer_chn1_left']==1 and mpfh.home_ok_flag['steer_chn1_right']==1 and mpfh.home_ok_flag['steer_chn2_left']==1 and mpfh.home_ok_flag['steer_chn2_right']==1:
-                #             mpfh.MobileControl.logger.loggerinfo("------------------!!!!!!Homing is over !!!!!!-----------","LIGHT_RED")
-                #             break
-    time_sm = np.array(time_list)
-    time_smooth = np.linspace(time_sm.min(), time_sm.max(), 300)
-    feedback_smooth = spline(time_list, feedback_list, time_smooth)
-    plt.figure(0)
-    plt.plot(time_smooth, feedback_smooth)
-    plt.plot(time_list, setpoint_list)
-    plt.xlim((0, END))
-    plt.ylim((min(feedback_list)-0.5, max(feedback_list)+0.5))
-    plt.xlabel('time (s)')
-    plt.ylabel('PID (PV)')
-    plt.title('TEST PID')
-
-    plt.ylim((1-2000.5, 1+2000.5))
-    # plt.ylim((1-0.5, 1+0.5))
-    plt.grid(True)
-    plt.show()            
+                    time.sleep(0.1)            
     mpfh.MobileControl.CanAnalysis.Can_VCICloseDevice()
 if __name__=="__main__":
     main()

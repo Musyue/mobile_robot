@@ -44,14 +44,16 @@ class VCI_INIT_CONFIG(Structure):
 class CanAnalysisDriver:
     def __init__(self):
         self.configname="mobileparameter.yaml"
-        self.OpreateCanAnalysis = cdll.LoadLibrary('../lib/libcontrolcan.so')
+        self.path_current=os.getcwd()
+        # print os.getcwd()
+        self.OpreateCanAnalysis = cdll.LoadLibrary(str(self.path_current)+'/src/mobile_robot/lib/libcontrolcan.so')
         self.yamlDic={}
         self.Opreating_Yaml()# init yaml
         
         self.logger = LoggerSetClass(0)
     def Opreating_Yaml(self):
-        current_path = os.path.abspath("..")
-        yaml_path = os.path.join(current_path, "config/"+self.configname)
+
+        yaml_path = str(self.path_current)+"/src/mobile_robot/src/config/"+self.configname
         print yaml_path
         file_data = open(yaml_path)
         self.yamlDic = yaml.load(file_data)

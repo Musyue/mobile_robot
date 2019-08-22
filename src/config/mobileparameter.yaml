@@ -14,8 +14,12 @@ Frames_Length: 1 # 每次发送几帧
 steering_mode: 0 
 walking_mode: 1
 Homing_abs_encoder_data:
-  fl: 27118  # corresponding impulse of steering motor (front left)
-  fr: 29262  # corresponding impulse of steering motor (front right)
-  rl: 30036 # corresponding impulse of steering motor (rear left)
-  rr: 27800  # corresponding impulse of steering motor (rear right)
-Homing_error_limit: 10
+  fl: 25902  # corresponding impulse of steering motor (front left)
+  fr: 26803  # corresponding impulse of steering motor (front right)
+  rl: 28810 # corresponding impulse of steering motor (rear left)
+  rr: 26141  # corresponding impulse of steering motor (rear right)
+Homing_error_limit: 3
+Pid_parameter: 
+  P: 0.5
+  I: 0.3
+  D: 0.001

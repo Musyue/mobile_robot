@@ -62,7 +62,7 @@ def test_pid(P = 0.2,  I = 0.0, D= 0.0, L=100):
     plt.ylabel('PID (PV)')
     plt.title('TEST PID')
 
-    plt.ylim((1-60000.5, 1+60000.5))
+    plt.ylim((1-2000.5, 1+2000.5))
     # plt.ylim((1-0.5, 1+0.5))
     plt.grid(True)
     plt.show()

@@ -54,8 +54,9 @@ class PID:
         """
         error = self.SetPoint - feedback_value
         self.Error=error
-        print "error",error
+        print "--------error-------",error
         self.current_time = time.time()
+        print 
         delta_time = self.current_time - self.last_time
         delta_error = error - self.last_error
 
