@@ -49,17 +49,17 @@
 #             return RIGHT
 #         else:
 #             print("Please input LEFT/RIGHT or left/right  -----")
-def toHex(dec):
-    x = (dec % 16)
-    digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, b, c, d, e, f]
-    rest = dec / 16
-    if (rest == 0):
-        return digits[x]
-    return toHex(rest) + digits[x]
+# def toHex(dec):
+#     x = (dec % 16)
+#     digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, b, c, d, e, f]
+#     rest = dec / 16
+#     if (rest == 0):
+#         return digits[x]
+#     return toHex(rest) + digits[x]
 
-numbers = [0, 11, 16, 32, 33, 41, 45, 678, 574893]
-print [toHex(x) for x in numbers]
-print [hex(x) for x in numbers]
+# numbers = [0, 11, 16, 32, 33, 41, 45, 678, 574893]
+# print [toHex(x) for x in numbers]
+# print [hex(x) for x in numbers]
 # # Caculate_Velocity_Command(1500,'right')
 # n = int(input("Input any number"))
 # hex_values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f']
@@ -71,3 +71,21 @@ print [hex(x) for x in numbers]
 #     reversed_number += str(hex_values[remainder])
 
 # print(reversed_number[::-1])
+from bitstring import Bits
+kk=[67, 100, 96, 0, 156, 255, 255, 255]
+def HEX_String_List_To_Oct_Four(Hexstrlist):
+    print "Hexstrlist",Hexstrlist
+    temp=[]
+    for i in Hexstrlist:
+        temp.append(bin(i))
+    # print temp
+    
+    hex04=temp[4]
+    hex05=temp[5]
+    hex06=temp[6]
+    hex07=temp[7]
+    newtemp=int(''.join([hex07,hex06,hex05,hex04]).replace('0b',''),2)#str([hex04,hex03])
+    kkk=''.join([hex07,hex06,hex05,hex04]).replace('0b','')
+    print newtemp,Bits(bin=kkk).int
+    print kkk
+HEX_String_List_To_Oct_Four(kk)

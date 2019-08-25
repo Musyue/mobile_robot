@@ -18,7 +18,7 @@ Homing_abs_encoder_data:
   fr: 26803  # corresponding impulse of steering motor (front right)
   rl: 28810 # corresponding impulse of steering motor (rear left)
   rr: 26141  # corresponding impulse of steering motor (rear right)
-Homing_error_limit: 3
+Homing_error_limit: 5
 Pid_parameter: 
   P: 0.5
   I: 0.3

@@ -54,7 +54,7 @@ class CanAnalysisDriver:
     def Opreating_Yaml(self):
 
         yaml_path = str(self.path_current)+"/src/mobile_robot/src/config/"+self.configname
-        print yaml_path
+        # print yaml_path
         file_data = open(yaml_path)
         self.yamlDic = yaml.load(file_data)
         file_data.close()
@@ -117,7 +117,7 @@ class CanAnalysisDriver:
         config=VCI_BOARD_INFO()
         Canstatus=self.Can_ReadBoardInfo_PyInit(config)
 
-        print(config.can_Num)
+        # print(config.can_Num)
         if Canstatus==0:
             self.logger.loggererror("Read Board Info Can analysis device error!")
             self.logger.loggerinfo(Canstatus)

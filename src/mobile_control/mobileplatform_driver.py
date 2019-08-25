@@ -15,7 +15,7 @@ class MobilePlatformDriver():
         self.CanAnalysis=CanAnalysisDriver()
         self.CanAnalysis.Init_Can_All() #初始化can分析仪，注意这里没有关闭分析仪
         self.MobileDriver_Command=MobileDriverCommands()
-        self.logger=LoggerSetClass(0)
+        self.logger=LoggerSetClass(1)
         self.Datalen=8
     def Enable_Motor_controller(self,IDD,Frames_Length):
         
@@ -41,7 +41,7 @@ class MobilePlatformDriver():
                 if ret:
                     if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
                         print('driver feedback data:--->',list(kk.Data))
-                        print(kk.DataLen)
+                        # print(kk.DataLen)
         else:
             self.logger.loggererror("Please check your controller or can analysis!!!!")
         return True
