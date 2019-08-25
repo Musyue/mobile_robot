@@ -131,6 +131,7 @@ class MobilePlatFormHoming():
                     # print('abs Encoder 4',self.List_to_HEXList(list(kk[i].Data)))
                     # print(kk[i].DataLen)
                     # self.Abs_Encoder_rr_id4.append(self.List_to_HEXList(list(kk[i].Data)))
+                    
                     self.Abs_Encoder_rr_id4_oct=self.HEX_String_List_To_Oct(list(kk[i].Data))
 
                     self.MobileControl.logger.loggerinfo(self.HEX_String_List_To_Oct(list(kk[i].Data)))
