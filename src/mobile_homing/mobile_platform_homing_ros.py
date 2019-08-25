@@ -66,35 +66,46 @@ class MobilePlatFormHoming():
         # print "Hexstrlist",Hexstrlist
         temp=[]
         for i in Octlist:
-            temp.append(bin(i))
+            temp.append(i)
         # print temp
         
         hex04=temp[4]
         hex05=temp[5]
         hex06=temp[6]
         hex07=temp[7]
+        return -1*(~(temp[7]<<24|temp[6]<<16|temp[5]<<8|temp[4]-1)&0xFFFFFFFF)
         # newtemp=int(''.join([hex07,hex06,hex05,hex04]).replace('0b',''),2)#str([hex04,hex03])
-        kkk=''.join([hex07,hex06,hex05,hex04]).replace('0b','')
-        # print newtemp,Bits(bin=kkk).int
-        return Bits(bin=kkk).int
+        # kkk=''.join([hex07,hex06,hex05,hex04]).replace('0b','')
+        # # print newtemp,Bits(bin=kkk).int
+        # return Bits(bin=kkk).int
     def New_Read_Encoder_data_From_ABS_Encoder(self,RecNum):
         transmit_status_1=self.MobileControl.CanAnalysis.Can_Transmit(0,1,1,8,self.MobileControl.MobileDriver_Command.REQUEST_ENCODER_1)
-        time.sleep(0.015)
+        time.sleep(0.0015)
         transmit_status_2=self.MobileControl.CanAnalysis.Can_Transmit(0,1,2,8,self.MobileControl.MobileDriver_Command.REQUEST_ENCODER_2)
-        time.sleep(0.015)
+        time.sleep(0.0015)
         transmit_status_3=self.MobileControl.CanAnalysis.Can_Transmit(0,1,3,8,self.MobileControl.MobileDriver_Command.REQUEST_ENCODER_3)
-        time.sleep(0.015)
+        time.sleep(0.0015)
         transmit_status_4=self.MobileControl.CanAnalysis.Can_Transmit(0,1,4,8,self.MobileControl.MobileDriver_Command.REQUEST_ENCODER_4)
-        time.sleep(0.015)
+        time.sleep(0.0015)
         #position feedback
         position_data_fl=self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.BASIC_LEFT_POSITION_FEEDBACK)
-        time.sleep(0.015)
+        time.sleep(0.0015)
         position_data_fr=self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.BASIC_RIGHT_POSITION_FEEDBACK)
-        time.sleep(0.015)
+        time.sleep(0.0015)
         position_data_rl=self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.BASIC_LEFT_POSITION_FEEDBACK)
-        time.sleep(0.015)
+        time.sleep(0.0015)
         position_data_rr=self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.BASIC_RIGHT_POSITION_FEEDBACK)
-        time.sleep(0.015)
+        time.sleep(0.0015)
+
+        # position_data_fl=self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.BASIC_LEFT_POSITION_FEEDBACK)
+        # time.sleep(0.0015)
+        # position_data_fr=self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.BASIC_RIGHT_POSITION_FEEDBACK)
+        # time.sleep(0.0015)
+        # position_data_rl=self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.BASIC_LEFT_POSITION_FEEDBACK)
+        # time.sleep(0.0015)
+        # position_data_rr=self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.BASIC_RIGHT_POSITION_FEEDBACK)
+        # time.sleep(0.0015)
+
         ret,kk=self.MobileControl.CanAnalysis.Can_New_Receive(0,RecNum)
         if ret:
             for i in range(RecNum):
@@ -125,29 +136,34 @@ class MobilePlatFormHoming():
                     self.MobileControl.logger.loggerinfo(self.HEX_String_List_To_Oct(list(kk[i].Data)))
                 # print "kk[i].ID",kk[i].ID
                 # print  "list(kk[i].Data)",list(kk[i].Data)
-                if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and kk[i].ID==0x583 and list(kk[i].Data)[2]==96:
+                if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and kk[i].ID==0x583 and list(kk[i].Data)[2]==96 and list(kk[i].Data)[7]!=0 and list(kk[i].Data)[6]!=0 and list(kk[i].Data)[5]!=0 and list(kk[i].Data)[4]!=0:
                     print('driver position encode fl',self.List_to_HEXList(list(kk[i].Data)))
                     self.Driver_steer_encode_fl=self.HEX_String_List_To_Oct_Four(list(kk[i].Data))
                     print "self.Driver_steer_encode_fl",self.Driver_steer_encode_fl
-                if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and kk[i].ID==0x583 and list(kk[i].Data)[2]==104:
+                    print "list(kk[i].Data)",list(kk[i].Data)
+                if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and kk[i].ID==0x583 and list(kk[i].Data)[2]==104 and list(kk[i].Data)[7]!=0 and list(kk[i].Data)[6]!=0 and list(kk[i].Data)[5]!=0 and list(kk[i].Data)[4]!=0:
                     print('driver position encode fr',self.List_to_HEXList(list(kk[i].Data)))
                     self.Driver_steer_encode_fr=self.HEX_String_List_To_Oct_Four(list(kk[i].Data))
                     print " self.Driver_steer_encode_fr", self.Driver_steer_encode_fr
-                if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and kk[i].ID==0x584 and list(kk[i].Data)[2]==96:
+                    print "list(kk[i].Data)",list(kk[i].Data)
+                if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and kk[i].ID==0x584 and list(kk[i].Data)[2]==96 and list(kk[i].Data)[7]!=0 and list(kk[i].Data)[6]!=0 and list(kk[i].Data)[5]!=0 and list(kk[i].Data)[4]!=0:
                     print('driver position encode rl',self.List_to_HEXList(list(kk[i].Data)))
                     self.Driver_steer_encode_rl=self.HEX_String_List_To_Oct_Four(list(kk[i].Data))
                     print 'self.Driver_steer_encode_rl',self.Driver_steer_encode_rl
-                if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and kk[i].ID==0x584 and list(kk[i].Data)[2]==104:
+                    print "list(kk[i].Data)",list(kk[i].Data)
+                if list(kk[i].Data)[0]!=0 and list(kk[i].Data)[0]!=127 and kk[i].ID==0x584 and list(kk[i].Data)[2]==104 and list(kk[i].Data)[7]!=0 and list(kk[i].Data)[6]!=0 and list(kk[i].Data)[5]!=0 and list(kk[i].Data)[4]!=0:
                     print('driver position encode rr',self.List_to_HEXList(list(kk[i].Data)))
                     self.Driver_steer_encode_rr=self.HEX_String_List_To_Oct_Four(list(kk[i].Data))         
                     print "self.Driver_steer_encode_rr",self.Driver_steer_encode_rr
+                    print "list(kk[i].Data)",list(kk[i].Data)
+
     def Run_Four_Steer_Motor(self,flag):#in 200rpm
         if flag=="steer_chn2_left":
             self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.BASIC_LEFT_TEST_200_VELOCITY_COMMAND)
-            time.sleep(0.015)
+            time.sleep(0.0015)
         elif flag=="steer_chn2_right":
             self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.BASIC_RIGHT_TEST_200_VELOCITY_COMMAND)
-            time.sleep(0.015)
+            time.sleep(0.0015)
         elif flag== "steer_chn1_left":
             self.MobileControl.Send_Control_Command(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.BASIC_LEFT_TEST_200_VELOCITY_COMMAND)
             time.sleep(0.01)
@@ -197,11 +213,11 @@ class MobilePlatFormHoming():
             self.MobileControl.logger.loggererror("Flag error!!Please check ")
     def Init_mobile_platform(self):
         self.MobileControl.Opreation_Controller_Mode(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.SET_MODE_VELOCITY)
-        time.sleep(0.1)
+        # time.sleep(0.1)
         self.MobileControl.Opreation_Controller_Mode(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.SET_MODE_VELOCITY)
-        time.sleep(0.1)
+        # time.sleep(0.1)
         self.MobileControl.Enable_Steering_Controller()
-        time.sleep(0.1)
+        # time.sleep(0.1)
     def Init_Pid_Control(self,P,I,D,windup,sampletime):
         self.Pid.setKp(P)
         self.Pid.setKi(I)
@@ -256,55 +272,6 @@ class MobilePlatFormHoming():
         else:
             pass
     
-    def Homing(self,vel):
-        if self.Abs_Encoder_fl_id1_oct!=0:
-            self.MobileControl.logger.loggererror('steer_chn1_left'+'-------->'+str(self.fl_abs_encode)+'---------'+str(self.Abs_Encoder_fl_id1_oct)+'--------------->'+str(abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)))
-            
-            if abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)<=self.limit_error:
-                self.Stop_Four_Steer_Motor('steer_chn1_left')
-                self.MobileControl.logger.loggererror("steer homing fl ok!!!!!")
-                self.home_ok_flag.update({'steer_chn1_left':1})
-    def Homing_1(self):
-        if self.Abs_Encoder_fl_id1_oct!=0:
-            self.MobileControl.logger.loggererror('steer_chn1_left'+'-------->'+str(self.fl_abs_encode)+'---------'+str(self.Abs_Encoder_fl_id1_oct)+'--------------->'+str(abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)))
-            if abs(self.fl_abs_encode-self.Abs_Encoder_fl_id1_oct)<=self.limit_error:
-                self.Stop_Four_Steer_Motor('steer_chn1_left')
-                self.MobileControl.logger.loggerinfo("steer homing fl ok!!!!!","LIGHT_RED")
-                self.home_ok_flag.update({'steer_chn1_left':1})
-        else:
-            self.MobileControl.logger.loggerinfo("please wait encoder 1 feedback data","LIGHT_RED")
-
-        if self.Abs_Encoder_fr_id2_oct!=0:
-            self.MobileControl.logger.loggererror('steer_chn1_right'+'-------->'+str(self.fr_abs_encode)+'---------'+str(self.Abs_Encoder_fr_id2_oct)+'--------------->'+str(abs(self.fr_abs_encode-self.Abs_Encoder_fr_id2_oct)))
-            # self.MobileControl.logger.loggerinfo('self.fr_abs_encode-self.Abs_Encoder_fr_id2_oct)-------->'+str(abs(self.fr_abs_encode-self.Abs_Encoder_fr_id2_oct)),"LIGHT_RED")
-            if abs(self.fr_abs_encode-self.Abs_Encoder_fr_id2_oct)<=self.limit_error:
-                self.Stop_Four_Steer_Motor('steer_chn1_right')
-                self.MobileControl.logger.loggerinfo("steer homing fr ok!!!!!","LIGHT_RED")
-                self.home_ok_flag.update({'steer_chn1_right':1})
-        else:
-            self.MobileControl.logger.loggerinfo("please wait encoder 2 feedback data","LIGHT_RED")
-
-        if self.Abs_Encoder_rl_id3_oct!=0:
-            self.MobileControl.logger.loggererror('steer_chn2_left'+'-------->'+str(self.rl_abs_encode)+'---------'+str(self.Abs_Encoder_rl_id3_oct)+'--------------->'+str(abs(self.rl_abs_encode-self.Abs_Encoder_rl_id3_oct)))
-            # self.MobileControl.logger.loggerinfo('self.rl_abs_encode-self.Abs_Encoder_rl_id3_oct)------->'+str(abs(self.rl_abs_encode-self.Abs_Encoder_rl_id3_oct)),"LIGHT_RED")
-            if abs(self.rl_abs_encode-self.Abs_Encoder_rl_id3_oct)<=self.limit_error:
-                self.Stop_Four_Steer_Motor('steer_chn2_left')
-                self.MobileControl.logger.loggerinfo("steer homing rl ok!!!!!","LIGHT_RED")
-                self.home_ok_flag.update({'steer_chn2_left':1})
-        else:
-            self.MobileControl.logger.loggerinfo("please wait encoder 3 feedback data","LIGHT_RED")
-
-        if self.Abs_Encoder_rr_id4_oct!=0:
-            self.MobileControl.logger.loggererror('steer_chn2_right'+'-------->'+str(self.rr_abs_encode)+'---------'+str(self.Abs_Encoder_rr_id4_oct)+'--------------->'+str(abs(self.rr_abs_encode-self.Abs_Encoder_rr_id4_oct)))
-            # self.MobileControl.logger.loggerinfo('self.rr_abs_encode-self.Abs_Encoder_rr_id4_oct)-------->'+str(abs(self.rr_abs_encode-self.Abs_Encoder_rr_id4_oct)),"LIGHT_RED")
-            if abs(self.rr_abs_encode-self.Abs_Encoder_rr_id4_oct)<=self.limit_error:
-                self.Stop_Four_Steer_Motor('steer_chn2_right')
-                self.MobileControl.logger.loggerinfo("steer homing rr ok!!!!!","LIGHT_RED")
-                self.home_ok_flag.update({'steer_chn2_right':1})
-        else:
-            self.MobileControl.logger.loggerinfo("please wait encoder 4 feedback data","LIGHT_RED")
-            # self.MobileControl.logger.loggerinfo("Please wait homing progress!!!")
-        # return home_ok_flag
     def Pid_control_Performance(self,feedback_list,setpoint_list,time_list,figure_num,END):
         time_sm = np.array(time_list)
         time_smooth = np.linspace(time_sm.min(), time_sm.max(), 300)
@@ -357,21 +324,25 @@ def main():
     feedback_list_fl = []
     time_list_fl = []
     setpoint_list_fl = []
+    status_ok_fl=0
     #####fr
     feedback_fr=0
     feedback_list_fr = []
     time_list_fr = []
     setpoint_list_fr = []
+    status_ok_fr=0
     #####rl
     feedback_rl=0
     feedback_list_rl = []
     time_list_rl = []
     setpoint_list_rl = []
+    status_ok_rl=0
     #######rr
     feedback_rr=0
     feedback_list_rr = []
     time_list_rr = []
     setpoint_list_rr = []
+    status_ok_rr=0
     #######
     rate = rospy.Rate(ratet)
     while not rospy.is_shutdown():
@@ -399,20 +370,22 @@ def main():
                             out_vel=(velocity_control*60*50)/1024
                             print "out_vel-----fl",out_vel
                             if abs(out_vel)>1500 and out_vel<0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(-1500),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                                mpfh.MobileControl.Send_Velocity_Driver(int(-1300),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
                                 print "count num",count_num_fl
                             elif abs(out_vel)>1500 and out_vel>0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(1500),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                                mpfh.MobileControl.Send_Velocity_Driver(int(1300),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
                                 print "count num",count_num_fl                          
                             else:
                                 mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
                                 print "count num",count_num_fl
                         if abs(fl_error)<=mpfh.MobileControl.CanAnalysis.yamlDic['Homing_error_limit']:
-                            mpfh.MobileControl.Send_Velocity_Driver(0,'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                            flag_fl=0
-                            # count_num_fl=0
-                            output_fl=[]
-                            homing_ok_dic.update({'fl':1})
+                            status_ok_fl+=1
+                            if status_ok_fl>=3:
+                                mpfh.MobileControl.Send_Velocity_Driver(0,'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                                flag_fl=0
+                                # count_num_fl=0
+                                output_fl=[]
+                                homing_ok_dic.update({'fl':1})
 
                         count_num_fl+=1
                     if flag_fr == 'fr':
@@ -426,21 +399,23 @@ def main():
                             out_vel=(velocity_control*60*50)/1024
                             print "out_vel-----fr",out_vel
                             if abs(out_vel)>1500 and out_vel<0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(-1500),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                                mpfh.MobileControl.Send_Velocity_Driver(int(-1300),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
                                 print "count num",count_num_fr
                             elif abs(out_vel)>1500 and out_vel>0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(1500),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                                mpfh.MobileControl.Send_Velocity_Driver(int(1300),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
                                 print "count num",count_num_fr
                             else:
                                 mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
                                 print "count num",count_num_fr
 
                         if abs(fr_error)<=mpfh.MobileControl.CanAnalysis.yamlDic['Homing_error_limit']:
-                            mpfh.MobileControl.Send_Velocity_Driver(0,'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                            flag_fr=0
-                            # count_num_fr=0
-                            output_fr=[]
-                            homing_ok_dic.update({'fr':1})
+                            status_ok_fr+=1
+                            if status_ok_fr>=3:
+                                mpfh.MobileControl.Send_Velocity_Driver(0,'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                                flag_fr=0
+                                # count_num_fr=0
+                                output_fr=[]
+                                homing_ok_dic.update({'fr':1})
 
                         count_num_fr+=1
                     if flag_rl == 'rl':
@@ -454,21 +429,23 @@ def main():
                             out_vel=(velocity_control*60*50)/1024
                             print "out_vel-----rl",out_vel
                             if abs(out_vel)>1500 and out_vel<0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(-1000),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                                mpfh.MobileControl.Send_Velocity_Driver(int(-1300),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                                 print "count num",count_num_rl
                             elif abs(out_vel)>1500 and out_vel>0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(1000),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                                mpfh.MobileControl.Send_Velocity_Driver(int(1300),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                                 print "count num",count_num_rl
                             else:
                                 mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                                 print "count num",count_num_rl
 
                         if abs(rl_error)<=mpfh.MobileControl.CanAnalysis.yamlDic['Homing_error_limit']:
-                            mpfh.MobileControl.Send_Velocity_Driver(0,'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                            flag_rl=0
-                            # count_num_rl=0
-                            output_rl=[]
-                            homing_ok_dic.update({'rl':1})
+                            status_ok_rl+=1
+                            if status_ok_rl>=3:
+                                mpfh.MobileControl.Send_Velocity_Driver(0,'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                                flag_rl=0
+                                # count_num_rl=0
+                                output_rl=[]
+                                homing_ok_dic.update({'rl':1})
 
                         count_num_rl+=1
                     if flag_rr == 'rr':
@@ -482,21 +459,23 @@ def main():
                             out_vel=(velocity_control*60*50)/1024
                             print "out_vel-----rr",out_vel
                             if abs(out_vel)>1500 and out_vel<0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(-1500),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                                mpfh.MobileControl.Send_Velocity_Driver(int(-1300),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                                 print "count num",count_num_rr
                             elif abs(out_vel)>1500 and out_vel>0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(1500),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                                mpfh.MobileControl.Send_Velocity_Driver(int(1300),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                                 print "count num",count_num_rr
                             else:
                                 mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                                 print "count num",count_num_rr
 
                         if abs(rr_error)<=mpfh.MobileControl.CanAnalysis.yamlDic['Homing_error_limit']+1:
-                            mpfh.MobileControl.Send_Velocity_Driver(0,'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                            flag_rr=0
-                            # count_num_rr=0
-                            output_rr=[]
-                            homing_ok_dic.update({'rr':1})
+                            status_ok_rr+=1
+                            if status_ok_rr>=3:
+                                mpfh.MobileControl.Send_Velocity_Driver(0,'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                                flag_rr=0
+                                # count_num_rr=0
+                                output_rr=[]
+                                homing_ok_dic.update({'rr':1})
 
                         count_num_rr+=1
                 if homing_ok_dic.has_key('fl') and homing_ok_dic.has_key('fr') and homing_ok_dic.has_key('rl') and homing_ok_dic.has_key('rr'):
@@ -504,6 +483,10 @@ def main():
                         flag_1=0
                         mpfh.MobileControl.CanAnalysis.Can_VCICloseDevice()
                         print "---------------homing is ok------------------------"
+                        status_ok_fl=0
+                        status_ok_fr=0
+                        status_ok_rl=0
+                        status_ok_rr=0
                         # if mpfh.close_homing_flag:
                         #     mpfh.MobileControl.CanAnalysis.Can_VCICloseDevice()
                         #     pubarray=[mpfh.Driver_steer_encode_fl,mpfh.Driver_steer_encode_fr,mpfh.Driver_steer_encode_rl,mpfh.Driver_steer_encode_rr]

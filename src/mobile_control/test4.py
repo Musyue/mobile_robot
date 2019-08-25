@@ -72,20 +72,27 @@
 
 # print(reversed_number[::-1])
 from bitstring import Bits
-kk=[67, 100, 96, 0, 156, 255, 255, 255]
-def HEX_String_List_To_Oct_Four(Hexstrlist):
-    print "Hexstrlist",Hexstrlist
-    temp=[]
-    for i in Hexstrlist:
-        temp.append(bin(i))
-    # print temp
+kk=[67, 100, 96, 0, 40, 173, 138, 254]
+for i in kk:
+    print hex(i)
+print ~(kk[7]<<24|kk[6]<<16|kk[5]<<8|kk[4]-1)&0xFFFFFFFF
+# def HEX_String_List_To_Oct_Four(Hexstrlist):
+#     print "Hexstrlist",Hexstrlist
+#     temp=[]
+#     for i in Hexstrlist:
+#         temp.append(bin(i))
+#     # print temp
     
-    hex04=temp[4]
-    hex05=temp[5]
-    hex06=temp[6]
-    hex07=temp[7]
-    newtemp=int(''.join([hex07,hex06,hex05,hex04]).replace('0b',''),2)#str([hex04,hex03])
-    kkk=''.join([hex07,hex06,hex05,hex04]).replace('0b','')
-    print newtemp,Bits(bin=kkk).int
-    print kkk
-HEX_String_List_To_Oct_Four(kk)
+#     hex04=temp[4]
+#     hex05=temp[5]
+#     hex06=temp[6]
+#     hex07=temp[7]
+#     print bin(hex07<<24+hex06<<16+hex05<<8+hex04)
+#     # newtemp=''.join([hex07,hex06,hex05,hex04]).replace('0b','')
+#     # kkk=''.join([hex07,hex06,hex05,hex04]).replace('0b','')
+#     # print newtemp,type(newtemp)
+#     # ,Bits(bin=kkk).int
+#     # print 0x8000000&kkk
+#     # for i in kkk:
+#     #     print i
+# HEX_String_List_To_Oct_Four(kk)

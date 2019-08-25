@@ -20,7 +20,7 @@ class MobilePlatformDriver():
     def Enable_Motor_controller(self,IDD,Frames_Length):
         
         enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,IDD,self.Datalen,self.MobileDriver_Command.ENABLE_COMMAND_1)
-        time.sleep(0.3)
+        time.sleep(0.01)
         if enbalecomd1:
             ret,kk=self.CanAnalysis.Can_Receive(0,1)
             if ret:
@@ -28,7 +28,7 @@ class MobilePlatformDriver():
                     print('driver feedback data:--->',list(kk.Data))
                     print(kk.DataLen)
             enbalecomd2=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,IDD,self.Datalen,self.MobileDriver_Command.ENABLE_COMMAND_2)
-            time.sleep(0.3)
+            time.sleep(0.01)
             ret,kk=self.CanAnalysis.Can_Receive(0,1)
             if ret:
                 if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
@@ -36,7 +36,7 @@ class MobilePlatformDriver():
                     print(kk.DataLen)
             if enbalecomd2:
                 enbalecomd3=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,IDD,self.Datalen,self.MobileDriver_Command.ENABLE_COMMAND_3)
-                time.sleep(0.3)
+                time.sleep(0.01)
                 ret,kk=self.CanAnalysis.Can_Receive(0,1)
                 if ret:
                     if list(kk.Data)[0]!=0 and list(kk.Data)[0]!=127:
@@ -47,43 +47,43 @@ class MobilePlatformDriver():
         return True
     def Enable_Steering_Controller(self):
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel']['chn1'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc03:
             self.logger.loggerinfo("Enable Front Steering Motor Controller","GREEN")
         Mc04=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel']['chn2'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc04:
             self.logger.loggerinfo("Enable Rear Steering Motor Controller","GREEN")
     def Enable_Walking_Controller(self):
         Mc01=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['walking_channel']['chn1'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc01:
             self.logger.loggerinfo("Enable Front Walking Motor Controller","GREEN")
         Mc02=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['walking_channel']['chn2'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc02:
             self.logger.loggerinfo("Enable Rear Walking Motor Controller","GREEN")
     def Enable_Motor_Controller_All(self):
         Mc01=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['walking_channel']['chn1'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc01:
             self.logger.loggerinfo("Enable Front Walking Motor Controller","GREEN")
         Mc02=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['walking_channel']['chn2'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc02:
             self.logger.loggerinfo("Enable Rear Walking Motor Controller","GREEN")
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel']['chn1'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc03:
             self.logger.loggerinfo("Enable Front Steering Motor Controller","GREEN")
         Mc04=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel']['chn2'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc04:
             self.logger.loggerinfo("Enable Rear Steering Motor Controller","GREEN")
     def Disable_Motor_controller(self,IDD,Frames_Length):
         
         disablecomd=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,IDD,self.Datalen,self.MobileDriver_Command.DISENABLE_COMMAND)
-        time.sleep(0.1)
+        time.sleep(0.01)
         if disablecomd:
             strinfo="motor controller ID:"+str(IDD)+'is Disabled!!!'
             self.logger.loggerinfo(strinfo)
@@ -91,19 +91,19 @@ class MobilePlatformDriver():
     def Disable_ALL_Motor_Controller(self):
         
         Mc01=self.Disable_Motor_controller(self.CanAnalysis.yamlDic['walking_channel']['chn1'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc01:
             self.logger.loggerinfo("Disable Front Walking Motor Controller","GREEN")
         Mc02=self.Disable_Motor_controller(self.CanAnalysis.yamlDic['walking_channel']['chn2'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc02:
             self.logger.loggerinfo("Disable Rear Walking Motor Controller","GREEN")
         Mc03=self.Disable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel']['chn1'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc03:
             self.logger.loggerinfo("Disable Front Steering Motor Controller","GREEN")
         Mc04=self.Disable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel']['chn2'],self.CanAnalysis.yamlDic['Frames_Length'])
-        time.sleep(0.1)
+        time.sleep(0.01)
         if Mc04:
             self.logger.loggerinfo("Disable Rear Steering Motor Controller","GREEN")
     def Opreation_Controller_Mode(self,IDD,Mode_Choice):
@@ -112,7 +112,7 @@ class MobilePlatformDriver():
         """
         
         mod_cmd=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],self.CanAnalysis.yamlDic['Frames_Length'],IDD,self.Datalen,Mode_Choice)
-        time.sleep(0.1)
+        time.sleep(0.01)
         if mod_cmd:
             infostr='Mode:'+str(Mode_Choice)+'Set Ok!!!'
             self.logger.loggerinfo(infostr)
@@ -135,41 +135,41 @@ class MobilePlatformDriver():
     def Save_Parameter(self,flag):
         if flag=="steer":
             self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileDriver_Command.SAVE_PARAMETERS)
-            time.sleep(0.1)
+            time.sleep(0.01)
             self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileDriver_Command.SAVE_PARAMETERS)
-            time.sleep(0.1)
+            time.sleep(0.01)
         elif flag=="walking":
             self.Send_Control_Command(self.CanAnalysis.yamlDic['walking_channel']['chn1'],self.MobileDriver_Command.SAVE_PARAMETERS)
-            time.sleep(0.1)
+            time.sleep(0.01)
             self.Send_Control_Command(self.CanAnalysis.yamlDic['walking_channel']['chn2'],self.MobileDriver_Command.SAVE_PARAMETERS)
-            time.sleep(0.1)
+            time.sleep(0.01)
         else:
             self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileDriver_Command.SAVE_PARAMETERS)
-            time.sleep(0.1)
+            time.sleep(0.01)
             self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileDriver_Command.SAVE_PARAMETERS)
-            time.sleep(0.1)
+            time.sleep(0.01)
             self.Send_Control_Command(self.CanAnalysis.yamlDic['walking_channel']['chn1'],self.MobileDriver_Command.SAVE_PARAMETERS)
-            time.sleep(0.1)
+            time.sleep(0.01)
             self.Send_Control_Command(self.CanAnalysis.yamlDic['walking_channel']['chn2'],self.MobileDriver_Command.SAVE_PARAMETERS)
-            time.sleep(0.1)
+            time.sleep(0.01)
 
     def Send_Zero_Velocity_to_All_Motor(self):
         self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileDriver_Command.BASIC_LEFT_TARGET_VELOCITY_COMMAND)
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileDriver_Command.BASIC_LEFT_TARGET_VELOCITY_COMMAND)
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.Send_Control_Command(self.CanAnalysis.yamlDic['walking_channel']['chn1'],self.MobileDriver_Command.BASIC_LEFT_TARGET_VELOCITY_COMMAND)
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.Send_Control_Command(self.CanAnalysis.yamlDic['walking_channel']['chn2'],self.MobileDriver_Command.BASIC_LEFT_TARGET_VELOCITY_COMMAND)
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileDriver_Command.BASIC_RIGHT_TARGET_VELOCITY_COMMAND)
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileDriver_Command.BASIC_RIGHT_TARGET_VELOCITY_COMMAND)
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.Send_Control_Command(self.CanAnalysis.yamlDic['walking_channel']['chn1'],self.MobileDriver_Command.BASIC_RIGHT_TARGET_VELOCITY_COMMAND)
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.Send_Control_Command(self.CanAnalysis.yamlDic['walking_channel']['chn2'],self.MobileDriver_Command.BASIC_RIGHT_TARGET_VELOCITY_COMMAND)
-        time.sleep(0.1)
+        time.sleep(0.01)
     def Send_Velocity_Driver(self,VelocityData,Left_Right,Driver_Id):
         command=self.Caculate_Velocity_Command(int(VelocityData),Left_Right)
         self.Send_Control_Command(Driver_Id,command)
