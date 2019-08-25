@@ -525,7 +525,11 @@ def main():
                     mpfh.homing_ok_pub.publish(True)
                     mpfh.driver_position_feedback_pub.publish(positiondata_array_for_publishing)
                         # time.sleep(0.1)
-    rate.sleep()            
+                elif mpfh.close_homing_flag==False:
+                    print "close uploading data to topics-------------"
+                else:
+                    pass
+        rate.sleep()            
    
 if __name__=="__main__":
     main()
