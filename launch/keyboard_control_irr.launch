@@ -1,0 +1,6 @@
+<launch>
+  <node name="keyboard_control_driver" pkg="mobile_robot" type="keyboard_control_driver.py" output="screen">
+    <param name="scale_linear" value="0.1" type="double"/>
+    <param name="scale_angular" value="0.4" type="double"/>
+  </node>
+</launch>

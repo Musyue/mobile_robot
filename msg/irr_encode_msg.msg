@@ -1,0 +1,21 @@
+int64 Count
+int64 Abs_Encoder_fl_id1_oct
+int64 Abs_Encoder_fr_id2_oct
+int64 Abs_Encoder_rl_id3_oct
+int64 Abs_Encoder_rr_id4_oct
+
+
+int64 Driver_walk_encode_fl
+int64 Driver_walk_encode_fr
+int64 Driver_walk_encode_rl
+int64 Driver_walk_encode_rr   
+
+int64 Driver_walk_velocity_encode_fl
+int64 Driver_walk_velocity_encode_fr
+int64 Driver_walk_velocity_encode_rl
+int64 Driver_walk_velocity_encode_rr      
+
+int64 Driver_steer_encode_fl
+int64 Driver_steer_encode_fr
+int64 Driver_steer_encode_rl
+int64 Driver_steer_encode_rr

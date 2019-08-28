@@ -303,11 +303,15 @@ class CanAnalysisDriver:
             self.logger.loggerinfo(Canstatus)
             return True 
     def Init_Can_All(self,):
-        self.Can_VCIOpenDevice()
-        self.Can_VCIInitCan(self.yamlDic['nCanId'])
-        self.Can_StartCAN(self.yamlDic['nCanId'])
-        self.Can_ResetCAN(self.yamlDic['nCanId'])
-        self.Can_ReadBoardInfo()
+        
+        if self.Can_VCIOpenDevice():
+            self.Can_VCIInitCan(self.yamlDic['nCanId'])
+            self.Can_StartCAN(self.yamlDic['nCanId'])
+            self.Can_ResetCAN(self.yamlDic['nCanId'])
+            self.Can_ReadBoardInfo()
+        else:
+
+            self.logger.loggererror("------can analysis is initial ok---- or -------can analysis is already open-----")
 def main():
     md=CanAnalysisDriver()
     # md.Opreating_Yaml()
