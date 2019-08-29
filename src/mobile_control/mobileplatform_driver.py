@@ -13,10 +13,12 @@ import time
 class MobilePlatformDriver():
     def __init__(self,):
         self.CanAnalysis=CanAnalysisDriver()
-        self.CanAnalysis.Init_Can_All() #初始化can分析仪，注意这里没有关闭分析仪
+        self.CanAnalysis.Init_Can_All()
         self.MobileDriver_Command=MobileDriverCommands()
         self.logger=LoggerSetClass(1)
         self.Datalen=8
+    def Init_can(self):
+        self.CanAnalysis.Init_Can_All() #初始化can分析仪，注意这里没有关闭分析仪
     def Enable_Motor_controller(self,IDD,Frames_Length):
         
         enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,IDD,self.Datalen,self.MobileDriver_Command.ENABLE_COMMAND_1)
@@ -136,16 +138,19 @@ class MobilePlatformDriver():
             return False
     def Save_Parameter(self,flag):
         if flag=="steer":
+            print("steer driver parameter save------")
             self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileDriver_Command.SAVE_PARAMETERS)
             time.sleep(0.001)
             self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileDriver_Command.SAVE_PARAMETERS)
             time.sleep(0.001)
         elif flag=="walking":
+            print("walking driver parameter save------")
             self.Send_Control_Command(self.CanAnalysis.yamlDic['walking_channel']['chn1'],self.MobileDriver_Command.SAVE_PARAMETERS)
             time.sleep(0.001)
             self.Send_Control_Command(self.CanAnalysis.yamlDic['walking_channel']['chn2'],self.MobileDriver_Command.SAVE_PARAMETERS)
             time.sleep(0.001)
         else:
+            print("steer and walking driver parameter save------")
             self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileDriver_Command.SAVE_PARAMETERS)
             time.sleep(0.001)
             self.Send_Control_Command(self.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileDriver_Command.SAVE_PARAMETERS)
@@ -177,7 +182,7 @@ class MobilePlatformDriver():
         self.Send_Control_Command(Driver_Id,command)
         time.sleep(0.0015)
     def Send_Position_Driver(self,PosistionData,Left_Right,Driver_Id):
-        command=self.Caculate_Velocity_Command(int(PositionData),Left_Right)
+        command=self.Caculate_Position_Command(int(PosistionData),Left_Right)
         self.Send_Control_Command(Driver_Id,command)
         time.sleep(0.0015)
     def Caculate_Velocity_Command(self,VelocityData,Left_Right):
@@ -200,7 +205,7 @@ class MobilePlatformDriver():
                 velocity=hex(VelocityData & 0xFFFFFFFF)
                 newvelocity=[velocity[i:i+2] for i in range(0,len(velocity), 2)]
                 NEWRIGHT=RIGHT[:4]+(int(newvelocity[4],16),int(newvelocity[3],16),int(newvelocity[2],16),int(newvelocity[1],16))
-                # print newvelocity,NEWRIGHT
+                print newvelocity,NEWRIGHT
                 return NEWRIGHT
             else:
                 print("Please input LEFT/RIGHT or left/right  -----")
@@ -240,7 +245,7 @@ class MobilePlatformDriver():
             else:
                 print("Please input LEFT/RIGHT or left/right  -----")
 
-    def Caculate_Position_Command(self,PositionData,Left_Right,Driver_Id):
+    def Caculate_Position_Command(self,PositionData,Left_Right):
         #left target :(0x23, 0x7a, 0x68, 0x00, 0x00, 0x00, 0x00, 0x00)
         #right target:(0x23, 0x7a, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00)
         LEFT=self.MobileDriver_Command.BASIC_LEFT_TARGET_POSITION_COMMAND
@@ -252,13 +257,13 @@ class MobilePlatformDriver():
                 position=hex(PositionData & 0xFFFFFFFF)
                 newposition=[position[i:i+2] for i in range(0,len(position), 2)]
                 NEWLEFT=LEFT[:4]+(int(newposition[4],16),int(newposition[3],16),int(newposition[2],16),int(newposition[1],16))
-                print newposition,NEWLEFT
+                # print newposition,NEWLEFT
                 return NEWLEFT
             elif Left_Right =="right" or Left_Right=="RIGHT":
                 position=hex(PositionData & 0xFFFFFFFF)
                 newposition=[position[i:i+2] for i in range(0,len(position), 2)]
                 NEWRIGHT=RIGHT[:4]+(int(newposition[4],16),int(newposition[3],16),int(newposition[2],16),int(newposition[1],16))
-                print newposition,NEWRIGHT
+                # print newposition,NEWRIGHT
                 return NEWRIGHT
             else:
                 print("Please input LEFT/RIGHT or left/right  -----")
@@ -293,18 +298,20 @@ def main():
     count=1
     flag=1
     while count:
-        if flag==1:
-            mpd.Send_Velocity_Driver(0,'left',mpd.CanAnalysis.yamlDic['steering_channel']['chn2'])
-            mpd.Send_Velocity_Driver(0,'right',mpd.CanAnalysis.yamlDic['steering_channel']['chn2'])
-            mpd.Send_Velocity_Driver(0,'left',mpd.CanAnalysis.yamlDic['steering_channel']['chn1'])
-            # mpd.Send_Control_Command(mpd.CanAnalysis.yamlDic['steering_channel']['chn2'],(int('23',16),int('ff',16),int('60',16),int('00',16),int('c8',16),int('00',16),int('00',16),int('00',16)))
-            mpd.Send_Velocity_Driver(0,'right',mpd.CanAnalysis.yamlDic['steering_channel']['chn1'])
-        else:
-            mpd.Send_Velocity_Driver(1000,'left',mpd.CanAnalysis.yamlDic['steering_channel']['chn2'])
-            mpd.Send_Velocity_Driver(-1000,'right',mpd.CanAnalysis.yamlDic['steering_channel']['chn2'])
-            mpd.Send_Velocity_Driver(1000,'left',mpd.CanAnalysis.yamlDic['steering_channel']['chn1'])
-            #mpd.Send_Control_Command(mpd.CanAnalysis.yamlDic['steering_channel']['chn2'],(int('23',16),int('ff',16),int('60',16),int('00',16),int('c8',16),int('00',16),int('00',16),int('00',16)))
-            mpd.Send_Velocity_Driver(1000,'right',mpd.CanAnalysis.yamlDic['steering_channel']['chn1'])#0x23, 0xff, 0x60, 0x00, 0xc8, 0x00, 0x00, 0x00)
+        mpd.Save_Parameter('1')
+        time.sleep(1)
+        # if flag==1:
+        #     mpd.Send_Velocity_Driver(0,'left',mpd.CanAnalysis.yamlDic['steering_channel']['chn2'])
+        #     mpd.Send_Velocity_Driver(0,'right',mpd.CanAnalysis.yamlDic['steering_channel']['chn2'])
+        #     mpd.Send_Velocity_Driver(0,'left',mpd.CanAnalysis.yamlDic['steering_channel']['chn1'])
+        #     # mpd.Send_Control_Command(mpd.CanAnalysis.yamlDic['steering_channel']['chn2'],(int('23',16),int('ff',16),int('60',16),int('00',16),int('c8',16),int('00',16),int('00',16),int('00',16)))
+        #     mpd.Send_Velocity_Driver(0,'right',mpd.CanAnalysis.yamlDic['steering_channel']['chn1'])
+        # else:
+        #     mpd.Send_Velocity_Driver(1000,'left',mpd.CanAnalysis.yamlDic['steering_channel']['chn2'])
+        #     mpd.Send_Velocity_Driver(-1000,'right',mpd.CanAnalysis.yamlDic['steering_channel']['chn2'])
+        #     mpd.Send_Velocity_Driver(1000,'left',mpd.CanAnalysis.yamlDic['steering_channel']['chn1'])
+        #     #mpd.Send_Control_Command(mpd.CanAnalysis.yamlDic['steering_channel']['chn2'],(int('23',16),int('ff',16),int('60',16),int('00',16),int('c8',16),int('00',16),int('00',16),int('00',16)))
+        #     mpd.Send_Velocity_Driver(1000,'right',mpd.CanAnalysis.yamlDic['steering_channel']['chn1'])#0x23, 0xff, 0x60, 0x00, 0xc8, 0x00, 0x00, 0x00)
         # mpd.Send_Control_Command(mpd.CanAnalysis.yamlDic['steering_channel']['chn2'],mpd.MobileDriver_Command.BASIC_LEFT_TARGET_VELOCITY_COMMAND)
         # if mpd.Opreation_Controller_Mode(mpd.CanAnalysis.yamlDic['steering_channel']['chn2'],mpd.MobileDriver_Command.SET_MODE_VELOCITY):
         #     if  mpd.Enable_Motor_controller(mpd.CanAnalysis.yamlDic['steering_channel']['chn2'],1):
@@ -312,7 +319,7 @@ def main():
         #         if mpd.Send_Control_Command(mpd.CanAnalysis.yamlDic['steering_channel']['chn2'],mpd.MobileDriver_Command.BASIC_LEFT_TEST_600_VELOCITY_COMMAND):
         #             mpd.logger.loggerinfo("OK VELOCITY","LIGHT_RED")
         #             time.sleep(2)
-        count-=1
+        # count-=1
     mpd.CanAnalysis.Can_VCICloseDevice()
 if __name__=="__main__":
     main()

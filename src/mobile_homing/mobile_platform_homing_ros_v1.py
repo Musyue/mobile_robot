@@ -135,8 +135,8 @@ class MobilePlatFormHoming():
                     self.Abs_Encoder_rr_id4_oct=self.HEX_String_List_To_Oct(list(kk[i].Data))
 
                     self.MobileControl.logger.loggerinfo(self.HEX_String_List_To_Oct(list(kk[i].Data)))
-                if list(kk[i].Data)[0]!=127:
-                    print "kk[i].ID",kk[i].ID
+                # if list(kk[i].Data)[0]!=127:
+                #     print "kk[i].ID",kk[i].ID
                     # print  "list(kk[i].Data)",list(kk[i].Data)
                 if (kk[i].ID==0x81 or kk[i].ID==0x82 or kk[i].ID==0x83 or kk[i].ID==0x84):
                     print "------------------------------ermergecy code -------",list(kk[i].Data)
@@ -370,15 +370,14 @@ def main():
                         output_fl.append(fl_error)
 
                         if len(output_fl)>3:
-                            # print "output_fl",output_fl
                             velocity_control=P*(output_fl[count_num_fl]-output_fl[count_num_fl-1])+I*output_fl[count_num_fl]+D*(output_fl[count_num_fl]-2*output_fl[count_num_fl-1]+output_fl[count_num_fl-2])
                             out_vel=(velocity_control*60*50)/1024
                             print "out_vel-----fl",out_vel
-                            if abs(out_vel)>1500 and out_vel<0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(-1300),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                            if abs(out_vel)>800 and out_vel<0:
+                                mpfh.MobileControl.Send_Velocity_Driver(int(-1500),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
                                 print "count num",count_num_fl
-                            elif abs(out_vel)>1500 and out_vel>0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(1300),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                            elif abs(out_vel)>800 and out_vel>0:
+                                mpfh.MobileControl.Send_Velocity_Driver(int(1500),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
                                 print "count num",count_num_fl                          
                             else:
                                 mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
@@ -403,11 +402,11 @@ def main():
                             velocity_control=P*(output_fr[count_num_fr]-output_fr[count_num_fr-1])+I*output_fr[count_num_fr]+D*(output_fr[count_num_fr]-2*output_fr[count_num_fr-1]+output_fr[count_num_fr-2])
                             out_vel=(velocity_control*60*50)/1024
                             print "out_vel-----fr",out_vel
-                            if abs(out_vel)>1500 and out_vel<0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(-1300),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                            if abs(out_vel)>800 and out_vel<0:
+                                mpfh.MobileControl.Send_Velocity_Driver(int(-1500),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
                                 print "count num",count_num_fr
-                            elif abs(out_vel)>1500 and out_vel>0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(1300),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                            elif abs(out_vel)>800 and out_vel>0:
+                                mpfh.MobileControl.Send_Velocity_Driver(int(1500),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
                                 print "count num",count_num_fr
                             else:
                                 mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
@@ -433,11 +432,11 @@ def main():
                             velocity_control=P*(output_rl[count_num_rl]-output_rl[count_num_rl-1])+I*output_rl[count_num_rl]+D*(output_rl[count_num_rl]-2*output_rl[count_num_rl-1]+output_rl[count_num_rl-2])
                             out_vel=(velocity_control*60*50)/1024
                             print "out_vel-----rl",out_vel
-                            if abs(out_vel)>1500 and out_vel<0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(-1300),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                            if abs(out_vel)>800 and out_vel<0:
+                                mpfh.MobileControl.Send_Velocity_Driver(int(-1500),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                                 print "count num",count_num_rl
-                            elif abs(out_vel)>1500 and out_vel>0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(1300),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                            elif abs(out_vel)>800 and out_vel>0:
+                                mpfh.MobileControl.Send_Velocity_Driver(int(1500),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                                 print "count num",count_num_rl
                             else:
                                 mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
@@ -463,11 +462,11 @@ def main():
                             velocity_control=P*(output_rr[count_num_rr]-output_rr[count_num_rr-1])+I*output_rr[count_num_rr]+D*(output_rr[count_num_rr]-2*output_rr[count_num_rr-1]+output_rr[count_num_rr-2])
                             out_vel=(velocity_control*60*50)/1024
                             print "out_vel-----rr",out_vel
-                            if abs(out_vel)>1500 and out_vel<0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(-1300),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                            if abs(out_vel)>800 and out_vel<0:
+                                mpfh.MobileControl.Send_Velocity_Driver(int(-1500),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                                 print "count num",count_num_rr
-                            elif abs(out_vel)>1500 and out_vel>0:
-                                mpfh.MobileControl.Send_Velocity_Driver(int(1300),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                            elif abs(out_vel)>800 and out_vel>0:
+                                mpfh.MobileControl.Send_Velocity_Driver(int(1500),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
                                 print "count num",count_num_rr
                             else:
                                 mpfh.MobileControl.Send_Velocity_Driver(int(out_vel),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])

@@ -17,10 +17,12 @@ from mobile_control.mobileplatform_driver import *
 import binascii
 from mobile_robot.msg import irr_encode_msg
 import numpy as np
-
-
-class MobilePlatFormSensordata():
+import sys, select, termios, tty
+from geometry_msgs.msg import Twist
+import readchar
+class MobilePlatFormKeyboardControl():
     def __init__(self,):
+        self.wheel_R=0.15/2#m
         self.MobileControl=MobilePlatformDriver()#init can analysis
         self.Abs_Encoder_fl_id1_oct=0
         self.Abs_Encoder_fr_id2_oct=0
@@ -46,14 +48,39 @@ class MobilePlatFormSensordata():
         self.Driver_steer_encode_fr=0
         self.Driver_steer_encode_rl=0
         self.Driver_steer_encode_rr=0
+        self.Driver_steer_encode_fl_original=0
+        self.Driver_steer_encode_fr_original=0
+        self.Driver_steer_encode_rl_original=0
+        self.Driver_steer_encode_rr_original=0
         ####ROS
 
 
         self.driver_position_feedback_pub = rospy.Publisher("/mobile_platform_driver_sensor_feedback", irr_encode_msg, queue_size=10)
+        self.strmessage= """
+Control irr robot!
+---------------------------
+Moving around:
+u    i    o
+j    k    l
+m    ,    .
+i: control robot forward 
+,: control robot go back
+j: control robot go left
+l: control robot go right
+u: control robot northwest
+o: control robot eastwest
+m: control robot turn left
+.: control robot turn right
+b: go back initial point
+q/z : increase/decrease max speeds by 10%
+r:    control steer's axis to the center of circle
+w/x : increase/decrease only linear speed by 10%
+e/c : increase/decrease only angular speed by 10%
+space key, k : force stop
+anything else : stop smoothly
 
-    def close_homing_callback(self,msg):
-        # print msg.data
-        self.close_homing_flag=msg.data
+CTRL-C to quit
+"""
     def List_to_HEXList(self,Listdata):
         temp=[]
         for i in Listdata:
@@ -215,35 +242,130 @@ class MobilePlatFormSensordata():
                     # print "self.Driver_walk_velocity_encode_rr",self.Driver_walk_velocity_encode_rr
                     # print "list(kk[i].Data)",list(kk[i].Data)
 
+    def dynamic_array(self,listdata,newdata):
+        if len(listdata)>=10:
+            listdata=listdata[1:]
+            listdata.append(newdata)
+        else:
+            listdata.append(newdata)
+
     def Init_Ros_Node(self):
-        rospy.init_node("get_driverencode_for_mobileplatform")
+        rospy.init_node("keyboard_control_for_mobileplatform")
 
+    def vels(self,speed,turn):
+        return "currently:\tspeed %s\tturn %s " % (speed,turn)
+    def caculate_velocity(self,vel):
+        return (60*vel)/(0.15*pi)
+    def degree_to_pulse(self,rad):
+        #degree 弧度
+        return (rad*(220*1024*4.0)/(2.0*pi))
+    def output_pulse_position_control_zero(self,flag_list,degree_tar):
+        """
+        flag_list=[]
+        """
+        oldpusle_fl=self.Driver_steer_encode_fl_original
+        oldpusle_fr=self.Driver_steer_encode_fr_original
+        oldpusle_rl=self.Driver_steer_encode_rl_original
+        oldpusle_rr=self.Driver_steer_encode_rr_original
+        return [oldpusle_fl+flag_list[0]*self.degree_to_pulse(degree_tar),oldpusle_fr+flag_list[1]*self.degree_to_pulse(degree_tar),oldpusle_rl+flag_list[2]*self.degree_to_pulse(degree_tar),oldpusle_rr+flag_list[3]*self.degree_to_pulse(degree_tar)]
+
+    def output_pulse_position_control(self,flag_list,degree_tar):
+        """
+        flag_list=[]
+        """
+        oldpusle_fl=self.Driver_steer_encode_fl
+        oldpusle_fr=self.Driver_steer_encode_fr
+        oldpusle_rl=self.Driver_steer_encode_rl
+        oldpusle_rr=self.Driver_steer_encode_rr
+        return [oldpusle_fl+flag_list[0]*self.degree_to_pulse(degree_tar),oldpusle_fr+flag_list[1]*self.degree_to_pulse(degree_tar),oldpusle_rl+flag_list[2]*self.degree_to_pulse(degree_tar),oldpusle_rr+flag_list[3]*self.degree_to_pulse(degree_tar)]
+
+        # else:
+        #     print "there is no data from driver feedback---please check----"
+    def Init_mobile_driver(self):
+
+        self.MobileControl.Opreation_Controller_Mode(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.SET_MODE_POSITION)
+        # time.sleep(0.1)
+        self.MobileControl.Opreation_Controller_Mode(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.SET_MODE_POSITION)
+        # time.sleep(0.1)
+        self.MobileControl.Opreation_Controller_Mode(self.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'],self.MobileControl.MobileDriver_Command.SET_MODE_VELOCITY)
+        # time.sleep(0.1)
+        self.MobileControl.Opreation_Controller_Mode(self.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'],self.MobileControl.MobileDriver_Command.SET_MODE_VELOCITY)
+        self.MobileControl.Enable_Steering_Controller()
+        self.MobileControl.Enable_Walking_Controller()
+    def set_original_sensor_data(self,original_data_list):
+        self.Driver_steer_encode_fl_original=original_data_list[0]
+        self.Driver_steer_encode_fr_original=original_data_list[1]
+        self.Driver_steer_encode_rl_original=original_data_list[2]
+        self.Driver_steer_encode_rr_original=original_data_list[3]
+def getKey():
+    settings = termios.tcgetattr(sys.stdin)
+    tty.setraw(sys.stdin.fileno())
+    rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
+    if rlist:
+        key = sys.stdin.read(1)
+    else:
+        key = ''
+
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
+    return key
 def main():
+    # settings = termios.tcgetattr(sys.stdin)
 
-
-    mpfh=MobilePlatFormSensordata()
+    mpfh=MobilePlatFormKeyboardControl()
 
 
     mpfh.Init_Ros_Node()
-    count=0
-    flag=0
-    recevenum=0
-    flag_1=1
+    mpfh.Init_mobile_driver()
+
+    # mpfh.MobileControl.CanAnalysis.Can_ReadBoardInfo()
+    pub = rospy.Publisher('/cmd_vel', Twist, queue_size=5)
+    x = 0
+    th = 0
+    status = 0
+    count = 0
+    acc = 0.1
+    target_speed = 0
+    target_turn = 0
+    control_speed = 0
+    control_turn = 0
 
     ratet=1000
 
     rate = rospy.Rate(ratet)
     data_array=[]
     pubmsg=irr_encode_msg()
+    
+    speedBindings={
+        'q':(1.1,1),
+        'z':(.9,.9),
+        'w':(1.1,1),
+        'x':(.9,1),
+        'e':(1,1.1),
+        'c':(1,.9),
+          }
+    moveBindings = {
+        'i':(1,0),
+        'o':(1,-1),
+        'j':(0,1),
+        'l':(0,-1),
+        'u':(1,1),
+        ',':(-1,0),
+        '.':(-1,1),
+        'm':(-1,-1),
+        'a':(0,0),
+        'd':(0,0),
+        'r':(0,0),
+        'b':(0,0)
+           }
+    speed = .0
+    turn = .1
+    # try:
+    print mpfh.strmessage
+    print mpfh.vels(speed,turn)
+    flag=1
     while not rospy.is_shutdown():
-        
-        # print "haha"
-        before=time.time()
+
         recevenum=mpfh.MobileControl.CanAnalysis.Can_GetReceiveNum(0)
-        after=time.time()
-        print "recenum",after-before
-        # print recevenum
-        # mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
         if recevenum!=None:
             data_array=[
             mpfh.Abs_Encoder_fl_id1_oct,mpfh.Abs_Encoder_fr_id2_oct,mpfh.Abs_Encoder_rl_id3_oct,mpfh.Abs_Encoder_rr_id4_oct,mpfh.Driver_walk_encode_fl,
@@ -252,51 +374,163 @@ def main():
             mpfh.Driver_walk_velocity_encode_rl,mpfh.Driver_walk_velocity_encode_rr
             
             ]
-            before=time.time()
             mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
-            after=time.time()
-            print "encode",after-before
-            print "data_array",data_array
-            # if 0 not in data_array:
-            # rospy.loginfo("-----Abs_Encoder_fl_id1_oct----"+str(mpfh.Abs_Encoder_fl_id1_oct))
-            # rospy.loginfo("-----Abs_Encoder_fr_id2_oct----"+str(mpfh.Abs_Encoder_fr_id2_oct))
-            # rospy.loginfo("-----Abs_Encoder_rl_id3_oct----"+str(mpfh.Abs_Encoder_rl_id3_oct))
-            # rospy.loginfo("-----Abs_Encoder_rr_id4_oct----"+str(mpfh.Abs_Encoder_rr_id4_oct))
 
-            # rospy.loginfo("-----Driver_walk_encode_fl----"+str(mpfh.Driver_walk_encode_fl))
-            # rospy.loginfo("-----Driver_walk_encode_fr----"+str(mpfh.Driver_walk_encode_fr))
-            # rospy.loginfo("-----Driver_walk_encode_rl----"+str(mpfh.Driver_walk_encode_rl))
-            # rospy.loginfo("-----Driver_walk_encode_rr----"+str(mpfh.Driver_walk_encode_rr))
-            # rospy.loginfo("-----Driver_walk_velocity_encode_fl----"+str(mpfh.Driver_walk_velocity_encode_fl))
-            # rospy.loginfo("-----Driver_walk_velocity_encode_fr----"+str(mpfh.Driver_walk_velocity_encode_fr))
-            # rospy.loginfo("-----Driver_walk_velocity_encode_rl----"+str(mpfh.Driver_walk_velocity_encode_rl))
-            # rospy.loginfo("-----Driver_walk_velocity_encode_rr----"+str(mpfh.Driver_walk_velocity_encode_rr))
-            # rospy.loginfo("-----Driver_steer_encode_fl----"+str(mpfh.Driver_steer_encode_fl))
-            # rospy.loginfo("-----Driver_steer_encode_fr----"+str(mpfh.Driver_steer_encode_fr))
-            # rospy.loginfo("-----Driver_steer_encode_rl----"+str(mpfh.Driver_steer_encode_rl))
-            # rospy.loginfo("-----Driver_steer_encode_rr----"+str(mpfh.Driver_steer_encode_rr))
-            pubmsg.Count=count
-            pubmsg.Abs_Encoder_fl_id1_oct=mpfh.Abs_Encoder_fl_id1_oct
-            pubmsg.Abs_Encoder_fr_id2_oct=mpfh.Abs_Encoder_fr_id2_oct
-            pubmsg.Abs_Encoder_rl_id3_oct=mpfh.Abs_Encoder_rl_id3_oct
-            pubmsg.Abs_Encoder_rr_id4_oct=mpfh.Abs_Encoder_rr_id4_oct
-            pubmsg.Driver_steer_encode_fl=mpfh.Driver_steer_encode_fl
-            pubmsg.Driver_steer_encode_fr=mpfh.Driver_steer_encode_fr
-            pubmsg.Driver_steer_encode_rl=mpfh.Driver_steer_encode_rl
-            pubmsg.Driver_steer_encode_rr=mpfh.Driver_steer_encode_rr
-            pubmsg.Driver_walk_encode_fl=mpfh.Driver_walk_encode_fl
-            pubmsg.Driver_walk_encode_fr=mpfh.Driver_walk_encode_fr
-            pubmsg.Driver_walk_encode_rl=mpfh.Driver_walk_encode_rl
-            pubmsg.Driver_walk_encode_rr=mpfh.Driver_walk_encode_rr
-            pubmsg.Driver_walk_velocity_encode_fl=mpfh.Driver_walk_velocity_encode_fl
-            pubmsg.Driver_walk_velocity_encode_fr=mpfh.Driver_walk_velocity_encode_fr
-            pubmsg.Driver_walk_velocity_encode_rl=mpfh.Driver_walk_velocity_encode_rl
-            pubmsg.Driver_walk_velocity_encode_rr=mpfh.Driver_walk_velocity_encode_rr
-            mpfh.driver_position_feedback_pub.publish(pubmsg)
-            count+=1
+            print "data_array",data_array
+            if 0 not in [mpfh.Driver_steer_encode_fl,mpfh.Driver_steer_encode_fr,mpfh.Driver_steer_encode_rl,mpfh.Driver_steer_encode_rr]:
+                key = readchar.readkey()
+                if flag:
+                    mpfh.set_original_sensor_data([mpfh.Driver_steer_encode_fl,mpfh.Driver_steer_encode_fr,mpfh.Driver_steer_encode_rl,mpfh.Driver_steer_encode_rr])
+                    flag=0
+                if key==None:
+                    continue
+                print "key----",key
+                # key=0
+                # 运动控制方向键（1：正方向，-1负方向）
+                if key in moveBindings.keys():
+                    if key=='i':
+                        VelocityData= mpfh.caculate_velocity(speed)
+                        print "VelocityData:RPM/Min",VelocityData
+                        mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'left',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
+                        mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
+                        mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'left',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
+                        mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
+                    elif key ==',':
+                        VelocityData= -1*mpfh.caculate_velocity(speed)
+                        print "VelocityData:RPM/Min",VelocityData
+                        mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'left',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
+                        mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
+                        mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'left',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
+                        mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
+                    elif key =='j':
+                        OutputPulse=mpfh.output_pulse_position_control([-1.0,-1.0,-1.0,-1.0],pi/2)
+                        print "PositionData:",OutputPulse
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                    elif key =='l':
+                        OutputPulse=mpfh.output_pulse_position_control([1.0,1.0,1.0,1.0],pi/2)
+                        print "PositionData:",OutputPulse
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                    elif key == 'u':
+                        OutputPulse=mpfh.output_pulse_position_control([-1.0,-1.0,-1.0,-1.0],pi/4)
+                        print "PositionData:",OutputPulse
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                    elif key == 'o':
+                        OutputPulse=mpfh.output_pulse_position_control([1.0,1.0,1.0,1.0],pi/4)
+                        print "PositionData:",OutputPulse
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                    elif key == 'm':
+                        OutputPulse=mpfh.output_pulse_position_control([-1.0,1.0,1.0,-1.0],turn)
+                        print "PositionData",OutputPulse
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                    elif key == 'r':
+                        OutputPulse=mpfh.output_pulse_position_control([1.0,-1.0,-1.0,1.0],pi/4)
+                        print "PositionData",OutputPulse
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])                    
+                    elif key == '.':
+                        OutputPulse=mpfh.output_pulse_position_control([-1.0,1.0,1.0,-1.0],turn)
+                        print "PositionData:",OutputPulse
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                    elif key == 'b':
+                        OutputPulse=mpfh.output_pulse_position_control_zero([.0,.0,.0,.0],turn)
+                        print "PositionData:",OutputPulse
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                        mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                    else:
+                        pass
+                    x = moveBindings[key][0]
+                    th = moveBindings[key][1]
+                    count = 0
+                # 速度修改键
+                elif key in speedBindings.keys():
+                    speed = speed * speedBindings[key][0]  # 线速度增加0.1倍
+                    turn = turn * speedBindings[key][1]    # 角速度增加0.1倍
+                    count = 0
+
+                    print mpfh.vels(speed,turn)
+                    if (status == 14):
+                        print mpfh.strmessage
+                    status = (status + 1) % 15
+                # 停止键
+                elif key == ' ' or key == 'k' :
+                    x = 0
+                    th = 0
+                    control_speed = 0
+                    control_turn = 0
+                else:
+                    count = count + 1
+                    if count > 4:
+                        x = 0
+                        th = 0
+                    if (key == '\x03'):
+                        break
+
+                # 目标速度=速度值*方向值
+                target_speed = speed * x
+                target_turn = turn * th
+
+                # 速度限位，防止速度增减过快
+                if target_speed > control_speed:
+                    control_speed = min( target_speed, control_speed + 0.02 )
+                elif target_speed < control_speed:
+                    control_speed = max( target_speed, control_speed - 0.02 )
+                else:
+                    control_speed = target_speed
+
+                if target_turn > control_turn:
+                    control_turn = min( target_turn, control_turn + 0.1 )
+                elif target_turn < control_turn:
+                    control_turn = max( target_turn, control_turn - 0.1 )
+                else:
+                    control_turn = target_turn
+
+                # 创建并发布twist消息
+                twist = Twist()
+                twist.linear.x = control_speed; 
+                twist.linear.y = 0; 
+                twist.linear.z = 0
+                twist.angular.x = 0; 
+                twist.angular.y = 0; 
+                twist.angular.z = control_turn
+                pub.publish(twist)
+            else:
+                print "wait data from driver-----"
         else:
             mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
-        rate.sleep()            
+        rate.sleep()
+    # except:
+    #     print e
+
+    # finally:
+    #     twist = Twist()
+    #     twist.linear.x = 0; twist.linear.y = 0; twist.linear.z = 0
+    #     twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = 0
+    #     pub.publish(twist)
+
+
+    mpfh.MobileControl.CanAnalysis.Can_VCICloseDevice()
    
 if __name__=="__main__":
     main()

@@ -46,7 +46,7 @@ class MobilePlatFormKeyboardControl():
         ####ROS
 
 
-        self.driver_sensor_feedback_sub = rospy.Subscriber("/mobile_platform_driver_sensor_feedback", Int64MultiArray, self.sub_platform_sensor_callback)
+        self.driver_sensor_feedback_sub = rospy.Subscriber("/mobile_platform_driver_sensor_feedback", irr_encode_msg, self.sub_platform_sensor_callback)
         self.strmessage= """
 Control irr robot!
 ---------------------------
@@ -137,6 +137,7 @@ CTRL-C to quit
         else:
             print "there is no data from driver feedback---please check----"
     def Init_mobile_driver(self):
+        self.MobileControl.Init_can()
         self.MobileControl.Opreation_Controller_Mode(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'],self.MobileControl.MobileDriver_Command.SET_MODE_POSITION)
         # time.sleep(0.1)
         self.MobileControl.Opreation_Controller_Mode(self.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'],self.MobileControl.MobileDriver_Command.SET_MODE_POSITION)
@@ -155,6 +156,8 @@ def main():
 
     mpfh.Init_Ros_Node()
     mpfh.Init_mobile_driver()
+
+    # mpfh.MobileControl.CanAnalysis.Can_ReadBoardInfo()
     pub = rospy.Publisher('/cmd_vel', Twist, queue_size=5)
     x = 0
     th = 0
@@ -194,138 +197,138 @@ def main():
            }
     speed = .1
     turn = .1
-    try:
-        print mpfh.strmessage
-        print mpfh.vels(speed,turn)
-        while not rospy.is_shutdown():  
-            key = mpfh.getKey()
-            # key=0
-            # 运动控制方向键（1：正方向，-1负方向）
-            if key in moveBindings.keys():
-                if key=='i':
-                    VelocityData= mpfh.caculate_velocity(speed)
-                    print "VelocityData:RPM/Min",VelocityData
-                    mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'left',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
-                    mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
-                    mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
-                    mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
-                elif key ==',':
-                    VelocityData= -1*mpfh.caculate_velocity(speed)
-                    print "VelocityData:RPM/Min",VelocityData
-                    mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'left',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
-                    mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
-                    mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
-                    mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
-                elif key =='j':
-                    OutputPulse=mpfh.output_pulse_position_control('left',pi/2)
-                    print "PositionData:",OutputPulse
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                elif key =='l':
-                    OutputPulse=mpfh.output_pulse_position_control('right',pi/2)
-                    print "PositionData:",OutputPulse
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                elif key == 'u':
-                    OutputPulse=mpfh.output_pulse_position_control('left',pi/4)
-                    print "PositionData:",OutputPulse
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                elif key == 'o':
-                    OutputPulse=mpfh.output_pulse_position_control('right',pi/4)
-                    print "PositionData:",OutputPulse
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                elif key == 'm':
-                    OutputPulse=mpfh.output_pulse_position_control('left',turn)
-                    print "PositionData",OutputPulse
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                elif key == '.':
-                    OutputPulse=mpfh.output_pulse_position_control('left',turn)
-                    print "PositionData:",OutputPulse
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                    mpfh.MobileControl.Send_Position_Driver(int(OutputPulse),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
-                else:
-                    pass
-                x = moveBindings[key][0]
-                th = moveBindings[key][1]
-                count = 0
-            # 速度修改键
-            elif key in speedBindings.keys():
-                speed = speed * speedBindings[key][0]  # 线速度增加0.1倍
-                turn = turn * speedBindings[key][1]    # 角速度增加0.1倍
-                count = 0
+    # try:
+    print mpfh.strmessage
+    print mpfh.vels(speed,turn)
+    while not rospy.is_shutdown():  
+        key = mpfh.getKey()
+        # key=0
+        # 运动控制方向键（1：正方向，-1负方向）
+        if key in moveBindings.keys():
+            if key=='i':
+                VelocityData= mpfh.caculate_velocity(speed)
+                print "VelocityData:RPM/Min",VelocityData
+                mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'left',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
+                mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
+                mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
+                mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
+            elif key ==',':
+                VelocityData= -1*mpfh.caculate_velocity(speed)
+                print "VelocityData:RPM/Min",VelocityData
+                mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'left',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
+                mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn1'])
+                mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
+                mpfh.MobileControl.Send_Velocity_Driver(int(VelocityData),'right',mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel']['chn2'])
+            elif key =='j':
+                OutputPulse=mpfh.output_pulse_position_control('left',pi/2)
+                print "PositionData:",OutputPulse
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+            elif key =='l':
+                OutputPulse=mpfh.output_pulse_position_control('right',pi/2)
+                print "PositionData:",OutputPulse
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+            elif key == 'u':
+                OutputPulse=mpfh.output_pulse_position_control('left',pi/4)
+                print "PositionData:",OutputPulse
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+            elif key == 'o':
+                OutputPulse=mpfh.output_pulse_position_control('right',pi/4)
+                print "PositionData:",OutputPulse
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+            elif key == 'm':
+                OutputPulse=mpfh.output_pulse_position_control('left',turn)
+                print "PositionData",OutputPulse
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+            elif key == '.':
+                OutputPulse=mpfh.output_pulse_position_control('left',turn)
+                print "PositionData:",OutputPulse
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),'left',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn1'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+                mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),'right',mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel']['chn2'])
+            else:
+                pass
+            x = moveBindings[key][0]
+            th = moveBindings[key][1]
+            count = 0
+        # 速度修改键
+        elif key in speedBindings.keys():
+            speed = speed * speedBindings[key][0]  # 线速度增加0.1倍
+            turn = turn * speedBindings[key][1]    # 角速度增加0.1倍
+            count = 0
 
-                print mpfh.vels(speed,turn)
-                if (status == 14):
-                    print mpfh.strmessage
-                status = (status + 1) % 15
-            # 停止键
-            elif key == ' ' or key == 'k' :
+            print mpfh.vels(speed,turn)
+            if (status == 14):
+                print mpfh.strmessage
+            status = (status + 1) % 15
+        # 停止键
+        elif key == ' ' or key == 'k' :
+            x = 0
+            th = 0
+            control_speed = 0
+            control_turn = 0
+        else:
+            count = count + 1
+            if count > 4:
                 x = 0
                 th = 0
-                control_speed = 0
-                control_turn = 0
-            else:
-                count = count + 1
-                if count > 4:
-                    x = 0
-                    th = 0
-                if (key == '\x03'):
-                    break
+            if (key == '\x03'):
+                break
 
-            # 目标速度=速度值*方向值
-            target_speed = speed * x
-            target_turn = turn * th
+        # 目标速度=速度值*方向值
+        target_speed = speed * x
+        target_turn = turn * th
 
-            # 速度限位，防止速度增减过快
-            if target_speed > control_speed:
-                control_speed = min( target_speed, control_speed + 0.02 )
-            elif target_speed < control_speed:
-                control_speed = max( target_speed, control_speed - 0.02 )
-            else:
-                control_speed = target_speed
+        # 速度限位，防止速度增减过快
+        if target_speed > control_speed:
+            control_speed = min( target_speed, control_speed + 0.02 )
+        elif target_speed < control_speed:
+            control_speed = max( target_speed, control_speed - 0.02 )
+        else:
+            control_speed = target_speed
 
-            if target_turn > control_turn:
-                control_turn = min( target_turn, control_turn + 0.1 )
-            elif target_turn < control_turn:
-                control_turn = max( target_turn, control_turn - 0.1 )
-            else:
-                control_turn = target_turn
+        if target_turn > control_turn:
+            control_turn = min( target_turn, control_turn + 0.1 )
+        elif target_turn < control_turn:
+            control_turn = max( target_turn, control_turn - 0.1 )
+        else:
+            control_turn = target_turn
 
-            # 创建并发布twist消息
-            twist = Twist()
-            twist.linear.x = control_speed; 
-            twist.linear.y = 0; 
-            twist.linear.z = 0
-            twist.angular.x = 0; 
-            twist.angular.y = 0; 
-            twist.angular.z = control_turn
-            pub.publish(twist)
-
-            rate.sleep() 
-
-    except:
-        print e
-
-    finally:
+        # 创建并发布twist消息
         twist = Twist()
-        twist.linear.x = 0; twist.linear.y = 0; twist.linear.z = 0
-        twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = 0
+        twist.linear.x = control_speed; 
+        twist.linear.y = 0; 
+        twist.linear.z = 0
+        twist.angular.x = 0; 
+        twist.angular.y = 0; 
+        twist.angular.z = control_turn
         pub.publish(twist)
+
+        rate.sleep() 
+
+    # except:
+    #     print e
+
+    # finally:
+    #     twist = Twist()
+    #     twist.linear.x = 0; twist.linear.y = 0; twist.linear.z = 0
+    #     twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = 0
+    #     pub.publish(twist)
 
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
     mpfh.MobileControl.CanAnalysis.Can_VCICloseDevice()

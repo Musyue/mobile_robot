@@ -46,14 +46,14 @@ class CanAnalysisDriver:
         self.configname="mobileparameter.yaml"
         self.path_current=os.getcwd()
         # print os.getcwd()
-        self.OpreateCanAnalysis = cdll.LoadLibrary(str(self.path_current)+'/src/mobile_robot/lib/libcontrolcan.so')
+        self.OpreateCanAnalysis = cdll.LoadLibrary(str('/data/ros/yue_wk_2019/src/mobile_robot/lib/libcontrolcan.so'))
         self.yamlDic={}
         self.Opreating_Yaml()# init yaml
         
         self.logger = LoggerSetClass(0)
     def Opreating_Yaml(self):
 
-        yaml_path = str(self.path_current)+"/src/mobile_robot/src/config/"+self.configname
+        yaml_path = str("/data/ros/yue_wk_2019/src/mobile_robot/src/config/"+self.configname)
         # print yaml_path
         file_data = open(yaml_path)
         self.yamlDic = yaml.load(file_data)
@@ -303,15 +303,25 @@ class CanAnalysisDriver:
             self.logger.loggerinfo(Canstatus)
             return True 
     def Init_Can_All(self,):
-        
-        if self.Can_VCIOpenDevice():
-            self.Can_VCIInitCan(self.yamlDic['nCanId'])
-            self.Can_StartCAN(self.yamlDic['nCanId'])
-            self.Can_ResetCAN(self.yamlDic['nCanId'])
-            self.Can_ReadBoardInfo()
-        else:
-
-            self.logger.loggererror("------can analysis is initial ok---- or -------can analysis is already open-----")
+        # try:
+        #     if self.Can_VCIOpenDevice():
+        #         pass
+        #     else:
+        #         pass
+        # except:
+        #     rospy.loggerinfo("------can analysis is initial ok---- or -------can analysis is already open-----")
+        # try:
+        #     self.Can_VCICloseDevice()
+        # except:
+        #     pass
+        self.Can_VCIOpenDevice()
+        self.Can_VCIInitCan(self.yamlDic['nCanId'])
+        self.Can_StartCAN(self.yamlDic['nCanId'])
+        self.Can_ResetCAN(self.yamlDic['nCanId'])
+        self.Can_ReadBoardInfo()
+        # else:
+        #     pass
+        #     self.logger.loggererror("------can analysis is initial ok---- or -------can analysis is already open-----")
 def main():
     md=CanAnalysisDriver()
     # md.Opreating_Yaml()
