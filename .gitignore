@@ -10,7 +10,7 @@
 # Precompiled Headers
 *.gch
 *.pch
-
+*.log
 # Compiled Dynamic libraries
 *.dylib
 *.dll
