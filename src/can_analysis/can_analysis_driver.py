@@ -187,6 +187,27 @@ class CanAnalysisDriver:
             self.logger.loggerinfo("Can Analysis Reset Success!!")
             self.logger.loggerinfo(Canstatus)
             return True  
+    def Can_Transmit_new_multi(self,CanInd,SenData_dic):
+        Len=len(SenData_dic)
+        vci_can_obj = (Len*VCI_CAN_OBJ)()
+        for i in range(Len):
+            vci_can_obj[i].ID=SenData_dic[IDD]
+            vci_can_obj[i].RemoteFlag=0
+            vci_can_obj[i].ExternFlag =0
+            vci_can_obj[i].SendType = 0
+            vci_can_obj[i].DataLen = 8
+            vci_can_obj[i].Data=SenData_dic[SenData]
+        Canstatus=self.OpreateCanAnalysis.VCI_Transmit(self.yamlDic['nDeviceType'],self.yamlDic['nDeviceInd'],CanInd,vci_can_obj,48)
+        if Canstatus== -1:
+            self.logger.loggererror("Can analysis offline!")
+            self.logger.loggererror(Canstatus)
+        elif Canstatus==0:
+            self.logger.loggererror("Can Analysis Receive No data!!")
+            self.logger.loggererror(Canstatus)
+        else:
+            self.logger.loggerinfo("Can Analysis Receive Success!!")
+            self.logger.loggerinfo(Canstatus)
+        return Canstatus,vci_can_obj
     def Can_Transmit_PyInit(self,CanInd,Length,VCI_CAN_OBJ_STRUC):
         CanFuncStruc=self.OpreateCanAnalysis.VCI_Transmit#(self.yamlDic['nDeviceType'],self.yamlDic['nDeviceInd'],CanInd,)
         CanFuncStruc.restype = c_uint
@@ -215,8 +236,8 @@ class CanAnalysisDriver:
         self.logger.loggerinfo(SenData)
         #len+=1
 
-        Canstatus=self.Can_Transmit_PyInit(0,8,config)
-        time.sleep(0.1)
+        Canstatus=self.Can_Transmit_PyInit(0,48,config)
+        # time.sleep(0.1)
         if Canstatus== -1:
             self.logger.loggererror("Can analysis offline!")
             self.logger.loggererror(Canstatus)
