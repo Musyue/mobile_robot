@@ -207,7 +207,7 @@ def main():
     flag_rl= 'rl'
     flag_rr= 'rr'
     END=100
-    ratet=1
+    ratet=100
     homing_ok_dic={}
     ######fl
     output_fl=[]
@@ -395,7 +395,7 @@ def main():
                         #     mpfh.driver_position_feedback_pub.publish(positiondata_array_for_publishing)
             else:
                 mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
-                print "read data"
+                print "read data",recevenum
         if homing_ok_dic.has_key('fl') and homing_ok_dic.has_key('fr') and homing_ok_dic.has_key('rl') and homing_ok_dic.has_key('rr'):
             if homing_ok_dic['fl']==1 and homing_ok_dic['fr']==1 and  homing_ok_dic['rl']==1 and  homing_ok_dic['rr']==1:  
                 

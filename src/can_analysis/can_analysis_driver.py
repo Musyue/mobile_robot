@@ -118,6 +118,7 @@ class CanAnalysisDriver:
         Canstatus=self.Can_ReadBoardInfo_PyInit(config)
 
         # print(config.can_Num)
+        print Canstatus
         if Canstatus==0:
             self.logger.loggererror("Read Board Info Can analysis device error!")
             self.logger.loggerinfo(Canstatus)
@@ -354,7 +355,9 @@ def main():
     md.Can_ResetCAN(0)
     md.Can_ReadBoardInfo()
     comd=MobileDriverCommands()
+    print comd.REQUEST_ENCODER_1
     md.Can_Transmit(0,1,1,8,comd.REQUEST_ENCODER_1)
+    print "haha"
     time.sleep(0.3)
     renum=md.Can_GetReceiveNum(0)
     ret,kk=md.Can_Receive(0,1)
