@@ -261,6 +261,19 @@ CTRL-C to quit
             return [thetafr,thetare]
         else:
             return [0.0,0.0]
+    def rotation_radius(self,theta,V):
+        R=self.car_length/(2*tan(theta))
+        Rl=R+self.car_width/2
+        Rr=R-self.car_width/2
+        thetalf=atan(self.car_length/(self.car_width+self.car_length/tan(theta)))
+        thetalr=thetalf
+        thetarf=atan(self.car_length/(-self.car_width+self.car_length/tan(theta)))
+        thetarr=thetarf
+        Vlf=V*Rl/(R*cos(thetalf))
+        Vlr=V*Rl/R
+        Vrf=V*Rr/(R*cos(thetalf))
+        Vrr=V*Rr/R
+        return [thetalf,thetalr,thetarf,thetarr,Vlf,Vlr,Vrf,Vrr]
     def my_arccot(self,x):
         return pi/2-atan(x)
         # if x>0:
@@ -556,10 +569,11 @@ def main():
             else:
                 mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
         else:
-            print "---bicycle_model-----",mpfh.caculate_bicycle_model_thetafr_re()
+            # print "---bicycle_model-----",mpfh.caculate_bicycle_model_thetafr_re()
             
-            
-            four_walk_velocity=mpfh.caculate_four_walk_motor_velocity()
+            temp=mpfh.rotation_radius(pi/2,0.1)
+            # four_walk_velocity=mpfh.caculate_four_walk_motor_velocity()
+            four_walk_velocity=temp[1:4]
             # print "VelocityData:RPM/Min",VelocityData
             print "-----four_walk velocity------",four_walk_velocity
             VelocityData_fl= mpfh.caculate_velocity(1.0*four_walk_velocity[1])
@@ -573,8 +587,9 @@ def main():
             mpfh.MobileControl.Send_Velocity_Driver(1*int(VelocityData_rr),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_right_rpdo']['rpdo']['rpdo3'])
             print "real velocity in rpm/min",[VelocityData_fl,VelocityData_fr,VelocityData_rl,VelocityData_rr]
             # time.sleep(0.001)
-            four_steer_rad=mpfh.caculate_four_steer_degree_theta()
+            # four_steer_rad=mpfh.caculate_four_steer_degree_theta()
             print "----four_steer_degree----",four_steer_rad
+            four_steer_rad=temp[4:]
             OutputPulse=mpfh.output_pulse_position_control_multi([1.0,1.0,1.0,1.0],four_steer_rad[1],four_steer_rad[0],four_steer_rad[3],four_steer_rad[2])#output_pulse_position_control_zero([four_steer_rad[1],four_steer_rad[0],four_steer_rad[3],four_steer_rad[2]],turn)
             
             # OutputPulse=mpfh.output_pulse_position_control([1.0,1.0,1.0,1.0],pi/2)
