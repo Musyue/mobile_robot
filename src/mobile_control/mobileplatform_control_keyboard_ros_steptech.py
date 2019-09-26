@@ -53,10 +53,10 @@ class MobilePlatFormKeyboardControl():
         self.Driver_steer_velocity_encode_rl=0
         self.Driver_steer_velocity_encode_rr=0
 
-        self.Driver_steer_encode_fl_original=0
-        self.Driver_steer_encode_fr_original=0
-        self.Driver_steer_encode_rl_original=0
-        self.Driver_steer_encode_rr_original=0
+        self.Driver_steer_encode_fl_original=self.fl_abs_encode
+        self.Driver_steer_encode_fr_original=self.fr_abs_encode
+        self.Driver_steer_encode_rl_original=self.rl_abs_encode
+        self.Driver_steer_encode_rr_original=self.rr_abs_encode
         ####ROS
 
 
@@ -322,7 +322,10 @@ def main():
     turn = 0.01
     flg=1
     flag=1
-
+    target_speed = 0
+    target_turn = 0
+    control_speed = 0
+    control_turn = 0
     print mpfh.strmessage
     print mpfh.vels(speed,turn)
 
@@ -460,11 +463,23 @@ def main():
                 status = (status + 1) % 15
             # 停止键
             elif key == ' ' or key =='k':
-                    mpfh.MobileControl.Send_Velocity_Driver(-1*int(0),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_left_rpdo']['rpdo']['rpdo3'])
-                    mpfh.MobileControl.Send_Velocity_Driver(-1*int(0),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_right_rpdo']['rpdo']['rpdo3'])
-                    mpfh.MobileControl.Send_Velocity_Driver(-1*int(0),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_left_rpdo']['rpdo']['rpdo3'])
-                    mpfh.MobileControl.Send_Velocity_Driver(-1*int(0),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_right_rpdo']['rpdo']['rpdo3'])
-                # speed = 0
+                x = 0
+                th = 0
+                control_speed = 0
+                control_turn = 0
+                # circle_or_line_flag=input("Num 1 or 2:")
+                # if circle_or_line_flag==2:
+                #     mpfh.MobileControl.Send_Velocity_Driver(-1*int(control_speed),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_left_rpdo']['rpdo']['rpdo3'])
+                #     mpfh.MobileControl.Send_Velocity_Driver(-1*int(control_speed),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_right_rpdo']['rpdo']['rpdo3'])
+                #     mpfh.MobileControl.Send_Velocity_Driver(-1*int(control_speed),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_left_rpdo']['rpdo']['rpdo3'])
+                #     mpfh.MobileControl.Send_Velocity_Driver(-1*int(control_speed),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_right_rpdo']['rpdo']['rpdo3'])
+                #     # speed = 0
+                # else:
+                mpfh.MobileControl.Send_Velocity_Driver(-1*int(control_speed),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_left_rpdo']['rpdo']['rpdo3'])
+                mpfh.MobileControl.Send_Velocity_Driver(1*int(control_speed),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_right_rpdo']['rpdo']['rpdo3'])
+                mpfh.MobileControl.Send_Velocity_Driver(-1*int(control_speed),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_left_rpdo']['rpdo']['rpdo3'])
+                mpfh.MobileControl.Send_Velocity_Driver(1*int(control_speed),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_right_rpdo']['rpdo']['rpdo3'])
+                
                 # turn = 0
             elif key == 'y' :
                 speed = 0.2

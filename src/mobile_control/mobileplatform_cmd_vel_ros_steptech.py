@@ -56,10 +56,10 @@ class MobilePlatFormKeyboardControl():
         self.Driver_steer_velocity_encode_rl=0
         self.Driver_steer_velocity_encode_rr=0
 
-        self.Driver_steer_encode_fl_original=0
-        self.Driver_steer_encode_fr_original=0
-        self.Driver_steer_encode_rl_original=0
-        self.Driver_steer_encode_rr_original=0
+        self.Driver_steer_encode_fl_original=self.fl_abs_encode
+        self.Driver_steer_encode_fr_original=self.fr_abs_encode
+        self.Driver_steer_encode_rl_original=self.rl_abs_encode
+        self.Driver_steer_encode_rr_original=self.rr_abs_encode
         ####ROS
         self.linear_x=0
         self.linear_y=0
@@ -338,6 +338,15 @@ CTRL-C to quit
         oldpusle_rl=self.rl_abs_encode
         oldpusle_rr=self.rr_abs_encode
         return [oldpusle_fl+flag_list[0]*self.rad_to_pulse(self.degree_to_rad(rad_fl)),oldpusle_fr+flag_list[1]*self.rad_to_pulse(self.degree_to_rad(rad_fr)),oldpusle_rl+flag_list[2]*self.rad_to_pulse(self.degree_to_rad(rad_rl)),oldpusle_rr+flag_list[3]*self.rad_to_pulse(self.degree_to_rad(rad_rr))]
+    def output_pulse_position_control_multi_rad(self,flag_list,rad_fl,rad_fr,rad_rl,rad_rr):
+        """
+        flag_list=[]
+        """
+        oldpusle_fl=self.fl_abs_encode
+        oldpusle_fr=self.fr_abs_encode
+        oldpusle_rl=self.rl_abs_encode
+        oldpusle_rr=self.rr_abs_encode
+        return [oldpusle_fl+flag_list[0]*self.rad_to_pulse(rad_fl),oldpusle_fr+flag_list[1]*self.rad_to_pulse(rad_fr),oldpusle_rl+flag_list[2]*self.rad_to_pulse(rad_rl),oldpusle_rr+flag_list[3]*self.rad_to_pulse(rad_rr)]
 
     def Init_mobile_driver(self):
         self.MobileControl.Open_driver_can_Node(0x00000000,1)
@@ -571,9 +580,22 @@ def main():
         else:
             # print "---bicycle_model-----",mpfh.caculate_bicycle_model_thetafr_re()
             
-            temp=mpfh.rotation_radius(pi/2,0.1)
+            temp=mpfh.rotation_radius(2*pi/3,0.05)
+            four_steer_rad=temp[4:]
+            print "----four_steer_degree----",four_steer_rad
+            
+            OutputPulse=mpfh.output_pulse_position_control_multi_rad([1.0,1.0,1.0,1.0],four_steer_rad[1],four_steer_rad[0],four_steer_rad[3],four_steer_rad[2])#output_pulse_position_control_zero([four_steer_rad[1],four_steer_rad[0],four_steer_rad[3],four_steer_rad[2]],turn)
+            
+            # OutputPulse=mpfh.output_pulse_position_control([1.0,1.0,1.0,1.0],pi/2)
+            print "PositionData caculate:",OutputPulse
+            print "Real positionData---",mpfh.Driver_steer_encode_fl,mpfh.Driver_steer_encode_fr,mpfh.Driver_steer_encode_rl,mpfh.Driver_steer_encode_rr
+            mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['front_steering_left_rpdo']['rpdo']['rpdo3'])
+            mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['front_steering_right_rpdo']['rpdo']['rpdo3'])
+            mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_left_rpdo']['rpdo']['rpdo3'])
+            mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_right_rpdo']['rpdo']['rpdo3'])
+            time.sleep(0.03)
             # four_walk_velocity=mpfh.caculate_four_walk_motor_velocity()
-            four_walk_velocity=temp[1:4]
+            four_walk_velocity=temp[:4]
             # print "VelocityData:RPM/Min",VelocityData
             print "-----four_walk velocity------",four_walk_velocity
             VelocityData_fl= mpfh.caculate_velocity(1.0*four_walk_velocity[1])
@@ -583,22 +605,12 @@ def main():
 
             mpfh.MobileControl.Send_Velocity_Driver(-1*int(VelocityData_fl),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_left_rpdo']['rpdo']['rpdo3'])
             mpfh.MobileControl.Send_Velocity_Driver(1*int(VelocityData_fr),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_right_rpdo']['rpdo']['rpdo3'])
-            mpfh.MobileControl.Send_Velocity_Driver(-1*int(VelocityData_rl),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_left_rpdo']['rpdo']['rpdo3'])
-            mpfh.MobileControl.Send_Velocity_Driver(1*int(VelocityData_rr),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_right_rpdo']['rpdo']['rpdo3'])
+            mpfh.MobileControl.Send_Velocity_Driver(1*int(VelocityData_rl),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_left_rpdo']['rpdo']['rpdo3'])
+            mpfh.MobileControl.Send_Velocity_Driver(-1*int(VelocityData_rr),0,mpfh.MobileControl.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_right_rpdo']['rpdo']['rpdo3'])
             print "real velocity in rpm/min",[VelocityData_fl,VelocityData_fr,VelocityData_rl,VelocityData_rr]
             # time.sleep(0.001)
             # four_steer_rad=mpfh.caculate_four_steer_degree_theta()
-            print "----four_steer_degree----",four_steer_rad
-            four_steer_rad=temp[4:]
-            OutputPulse=mpfh.output_pulse_position_control_multi([1.0,1.0,1.0,1.0],four_steer_rad[1],four_steer_rad[0],four_steer_rad[3],four_steer_rad[2])#output_pulse_position_control_zero([four_steer_rad[1],four_steer_rad[0],four_steer_rad[3],four_steer_rad[2]],turn)
-            
-            # OutputPulse=mpfh.output_pulse_position_control([1.0,1.0,1.0,1.0],pi/2)
-            print "PositionData:",OutputPulse
-            mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[0]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['front_steering_left_rpdo']['rpdo']['rpdo3'])
-            mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[1]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['front_steering_right_rpdo']['rpdo']['rpdo3'])
-            mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_left_rpdo']['rpdo']['rpdo3'])
-            mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_right_rpdo']['rpdo']['rpdo3'])
-            # time.sleep(2)
+
 
         rate.sleep()
 
