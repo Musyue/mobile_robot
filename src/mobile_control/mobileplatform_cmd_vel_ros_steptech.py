@@ -21,12 +21,15 @@ import sys, select, termios, tty
 from geometry_msgs.msg import Twist
 
 import readchar
+from razor_imu_data_intergral import *
+from sensor_msgs.msg import Imu
 class MobilePlatFormKeyboardControl():
     def __init__(self,):
         self.wheel_R=0.15/2#m
         self.car_length=0.5
         self.car_width=0.395
         self.MobileControl=MobilePlatformDriver()#init can analysis
+        
         self.Abs_Encoder_fl_id1_oct=0
         self.Abs_Encoder_fr_id2_oct=0
         self.Abs_Encoder_rl_id3_oct=0
@@ -70,6 +73,7 @@ class MobilePlatFormKeyboardControl():
         self.open_keyboard_or_bicycle_status=0
         self.cmd_vel_data_sub = rospy.Subscriber("/open_keyboard_or_bicycle", Bool, self.sub_bicycle_model_callback)
         self.cmd_vel_data_sub = rospy.Subscriber("/cmd_vel", Twist, self.sub_cmd_vel_callback)
+        self.Imuobj=IMUDATAINTERGAL()
         self.strmessage= """
 Control irr robot!
 ---------------------------
@@ -261,6 +265,7 @@ CTRL-C to quit
             return [thetafr,thetare]
         else:
             return [0.0,0.0]
+    
     def rotation_radius(self,theta,V):
         R=self.car_length/(2*tan(theta))
         Rl=R+self.car_width/2
@@ -349,6 +354,7 @@ CTRL-C to quit
         return [oldpusle_fl+flag_list[0]*self.rad_to_pulse(rad_fl),oldpusle_fr+flag_list[1]*self.rad_to_pulse(rad_fr),oldpusle_rl+flag_list[2]*self.rad_to_pulse(rad_rl),oldpusle_rr+flag_list[3]*self.rad_to_pulse(rad_rr)]
 
     def Init_mobile_driver(self):
+        self.MobileControl.Init_can()
         self.MobileControl.Open_driver_can_Node(0x00000000,1)
         self.MobileControl.Enable_Motor_Controller_All()
         self.MobileControl.Send_trapezoid_Velocity(2500)
@@ -359,17 +365,7 @@ CTRL-C to quit
         self.Driver_steer_encode_fr_original=original_data_list[1]
         self.Driver_steer_encode_rl_original=original_data_list[2]
         self.Driver_steer_encode_rr_original=original_data_list[3]
-def getKey():
-    settings = termios.tcgetattr(sys.stdin)
-    tty.setraw(sys.stdin.fileno())
-    rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
-    if rlist:
-        key = sys.stdin.read(1)
-    else:
-        key = ''
 
-    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-    return key
 def main():
     # settings = termios.tcgetattr(sys.stdin)
 
@@ -437,6 +433,7 @@ def main():
                 mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[2]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_left_rpdo']['rpdo']['rpdo3'])
                 mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_right_rpdo']['rpdo']['rpdo3'])
                 flg=0
+        print mpfh.Imuobj.ImuAngularvelocity
         if mpfh.open_keyboard_or_bicycle_status==False:
             recevenum=mpfh.MobileControl.CanAnalysis.Can_GetReceiveNum(0)
             if recevenum!=None:

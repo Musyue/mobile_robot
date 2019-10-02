@@ -5,6 +5,7 @@ class MobileDriverCommands:
         self.OPEN_CAN_NODE_DRIVER=(0x01,0x00)
         self.CLOSE_CAN_NODE_DRIVER=(0x02,0x00)
         self.ENABLE_DRIVER_SET_VELOCITY=(0xfd,0x0f,0x00)
+        self.ENABLE_DRIVER_SET_VELOCITY_SLOW=(0x03,0x0f,0x00)
         self.ENABLE_DRIVER_SET_POSITION=(0x01,0x3f,0x10)
         self.ENABLE_DRIVER_SET_HOMING=(0x06,0x1f,0x00)
         self.DISABLE_DRIVER=(0x01,0x06,0x00)

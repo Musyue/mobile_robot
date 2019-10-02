@@ -1,128 +1,81 @@
-#! /usr/bin/env python
-# coding=utf-8
-from ctypes import *
-import time 
-VCI_USBCAN2A = 4
-STATUS_OK = 1
-# class VCI_INIT_CONFIG(Structure):  
-#     _fields_ = [("AccCode", c_ulong),
-#                 ("AccMask", c_ulong),
-#                 ("Reserved", c_ulong),
-#                 ("Filter", c_ubyte),
-#                 ("Timing0", c_ubyte),
-#                 ("Timing1", c_ubyte),
-#                 ("Mode", c_ubyte)
-#                 ]  
-# class VCI_CAN_OBJ(Structure):  
-#     _fields_ = [("ID", c_uint),
-#                 ("TimeStamp", c_uint),
-#                 ("TimeFlag", c_ubyte),
-#                 ("SendType", c_ubyte),
-#                 ("RemoteFlag", c_ubyte),
-#                 ("ExternFlag", c_ubyte),
-#                 ("DataLen", c_ubyte),
-#                 ("Data", c_ubyte*8),
-#                 ("Reserved", c_ubyte*3)
-#                 ] 
-class VCI_BOARD_INFO(Structure):
-    _fields_ = [('hw_Version',c_ushort),
-                ('fw_Version',c_ushort),
-                ('dr_Version',c_ushort),
-                ('in_Version',c_ushort),
-                ('irq_Num',c_ushort),
-                ('can_Num',c_byte),
-                ('str_Serial_Num',c_char*20),
-                ('str_hw_Type',c_char*40),
-                ('Reserved',c_ushort*4)
-                                        ]
-class VCI_CAN_OBJ(Structure):
-    _fields_ = [('ID',c_uint),
-                ('TimeStamp',c_uint),
-                ('TimeFlag',c_byte),
-                ('SendType',c_byte),
-                ('RemoteFlag',c_byte),
-                ('ExternFlag',c_byte),
-                ('DataLen',c_byte),
-                ('Data',c_ubyte*8),
-                ('Reserved',c_ubyte*3)
-                                        ]
-class VCI_INIT_CONFIG(Structure):
-    _fields_ = [('AccCode',c_uint),
-                ('AccMask',c_uint),
-                ('Reserved',c_uint),
-                ('Filter',c_ubyte),
-                ('Timing0',c_ubyte),
-                ('Timing1',c_ubyte),
-                ('Mode',c_ubyte)
-                                        ] 
-canDLL = cdll.LoadLibrary('../lib/libcontrolcan.so')
-# canDLL = windll.LoadLibrary(CanDLLName)
-# print(CanDLLName)
- 
-ret = canDLL.VCI_OpenDevice(VCI_USBCAN2A, 0, 0)
-print(ret)
-if ret != STATUS_OK:
-    print('调用 VCI_OpenDevice出错\r\n')
- 
-#初始0通道
-vci_initconfig = VCI_INIT_CONFIG(0x00000000, 0xFFFFFFFF, 0,0, 0x00, 0x1C, 0)
-ret = canDLL.VCI_InitCAN(4, 0, 0, byref(vci_initconfig))
-if ret != STATUS_OK:
-    print('调用 VCI_InitCAN出错\r\n')
- 
-ret = canDLL.VCI_StartCAN(VCI_USBCAN2A, 0, 0)
-if ret != STATUS_OK:
-    print('调用 VCI_StartCAN出错\r\n')
- 
-# #初始1通道
-# ret = canDLL.VCI_InitCAN(VCI_USBCAN2A, 0, 1, byref(vci_initconfig))
-# if ret != STATUS_OK:
-#     print('调用 VCI_InitCAN 1 出错\r\n')
- 
-# ret = canDLL.VCI_StartCAN(VCI_USBCAN2A, 0, 1)
-# if ret != STATUS_OK:
-#     print('调用 VCI_StartCAN 1 出错\r\n')
- 
-#通道0发送数据
-ubyte_array = c_ubyte*8
-a = ubyte_array(0x04,0x01,0x01,0x00)
+from math import *
+import time
+class Tets():
+    def __init__(self):
+        self.odemetry_x=0.
+        self.odemetry_y=0.
+        self.odemetry_theta=0.0
+        self.car_length=1
+        self.odemetry_vel=0.000001
+    def andiff(self,th1,th2):
+        d=th1-th2
+        #d = mod(d+pi, 2*pi) - pi;
+        print "----d------",d
+        return (d+pi)%(2.0*pi) - pi
+    def Bycycle_Model(self,Vel,Gamma_rad,dt):
+            # Vel=0.000001
+            # theta=0
+            # x=0
+            # y=0
+            # dt=0.00000001
+            
+            # if Vel!=0:
+                # starttime=time.time()
+                # print imuobj.ImuOrientation
+                # print "starttime",starttime
+            thetastar=(tan(Gamma_rad)*Vel)/self.car_length
+            print "bicycle thetastar",thetastar
+            self.odemetry_theta+=thetastar*dt
+            xstar=Vel*cos(self.odemetry_theta)
+            ystar=Vel*sin(self.odemetry_theta)
+            print "bicycle xstar,ystar",xstar,ystar
+            self.odemetry_x+=xstar*dt
+            self.odemetry_y+=ystar*dt
+            print "bicycle x,y,theata",self.odemetry_x,self.odemetry_y,self.odemetry_theta
+                # endtime=time.time() 
+                # dt=endtime-starttime
+                # print "dt",dt
+            # print imuobj.mpfh.Driver_walk_velocity_encode_fl
+            # return [x,y,theta]
+            # else:
+            #     pass
+    def set_pdemetry_vel(self,vel):
+        self.odemetry_vel=vel
+    def set_pdemetry_x(self,x):
+        self.odemetry_x=x
+    def set_pdemetry_y(self,y):
+        self.odemetry_y=y
+    def set_pdemetry_theta(self,theta):
+        self.odemetry_theta=theta  
+    def Control_mobile_to_one_target(self,x,y,theta,Kv,Kh,dt):
+        """
+        World coordinate:[x,y,theta]
+        """
 
-ubyte_3array = c_ubyte*3
-b = ubyte_3array(0, 0 , 0)
-vci_can_obj_1 = VCI_CAN_OBJ(1, 0, 0, 0, 0, 0,  8, a, b)
- 
-ret = canDLL.VCI_Transmit(4, 0, 0, byref(vci_can_obj_1), 1)
-print("i send data",ret)
-if ret != STATUS_OK:
-    print('调用 VCI_Transmit 出错\r\n')
- 
-#通道1接收数据
-time.sleep(1)
-a = ubyte_array(0, 0, 0, 0, 0, 0, 0, 0)
-vci_can_obj = VCI_CAN_OBJ(0x0, 0, 0, 0, 0, 0,  8, a, b)
-# elems = (POINTER(VCI_CAN_OBJ) * 2500)()
-# vci_can_obj_arrar=cast(elems,POINTER(POINTER(VCI_CAN_OBJ)))
-# ret = canDLL.VCI_Receive(VCI_USBCAN2A, 0, 0, byref(vci_can_obj_arrar), 2500, 0)
-# print("data",ret)
-ret = canDLL.VCI_Receive(VCI_USBCAN2A, 0, 0, byref(vci_can_obj), 1, 0)
-while ret <= 0:
-    print('调用 VCI_Receive 出错\r\n')
-    ret = canDLL.VCI_Transmit(VCI_USBCAN2A, 0, 0, byref(vci_can_obj_1), 1)
-    print("i send data",ret)
-    if ret != STATUS_OK:
-        print('调用 VCI_Transmit 出错\r\n')
-    ret = canDLL.VCI_Receive(VCI_USBCAN2A, 0, 0, byref(vci_can_obj), 1, 0)
-    print ret
-    time.sleep(0.3)
-# a = ubyte_array(0, 0, 0, 0, 0, 0, 0, 0)
-# vci_can_obj = VCI_CAN_OBJ(0x0, 0, 0, 0, 0, 0,  8, a, b)
-while 1:
-    if ret > 0:
-        print("I receive data la",ret)
-        print(vci_can_obj.DataLen)
-        print('my data',list(vci_can_obj.Data))
-        for i in list(vci_can_obj.Data):
-            print "i",hex(i)
-    time.sleep(0.5)
-#关闭
-canDLL.VCI_CloseDevice(VCI_USBCAN2A, 0) 
+        Vstar=Kv*sqrt((x-self.odemetry_x)**2+(y-self.odemetry_y)**2)
+        # print "self.odemetry_x",self.odemetry_x
+        print "x-self.odemetry_x,y-self.odemetry_y",x-self.odemetry_x,y-self.odemetry_y
+        thetastar=atan2((y-self.odemetry_y),(x-self.odemetry_x))
+        print "thetastar,theta",thetastar,theta
+        gammastar=Kh*self.andiff(thetastar,theta)#Kh>0
+        
+        self.Bycycle_Model(Vstar,gammastar,dt)
+        print "------gammastar-----",gammastar,Vstar,thetastar
+        # self.pub_vstar.publish(Vstar)
+        # self.pub_x.publish(self.odemetry_x)
+        # self.pub_y.publish(self.odemetry_y)
+        # self.pub_theta.publish(self.odemetry_theta)
+def main():
+    T=Tets()
+    # print T.andiff(-2.876,3.1586)
+    x0=[8,5,pi/4]
+    count=1
+    T.set_pdemetry_x(x0[0])
+    T.set_pdemetry_y(x0[1])
+    T.set_pdemetry_theta(x0[2])
+    while count>0:
+        T.Control_mobile_to_one_target(5,5,0.0,0.5,0.4,0.1)
+        # count-=1
+        time.sleep(0.7)
+if __name__=="__main__":
+    main()
