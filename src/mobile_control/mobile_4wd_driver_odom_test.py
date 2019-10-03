@@ -38,6 +38,9 @@ class IMUDATAINTERGAL():
         self.pub_x=rospy.Publisher("/x",Float64,queue_size=10)
         self.pub_y=rospy.Publisher("/y",Float64,queue_size=10)
         self.pub_theta=rospy.Publisher("/theta",Float64,queue_size=10)
+        self.k_rou=0.2#3#0.2
+        self.k_alpha=0.5#8#0.5
+        self.k_beta=-0.2#-3#-0.2
         # self.homing_original_position=[self.mpfh.Driver_steer_encode_fl_original,self.mpfh.Driver_steer_encode_fr_original,self.mpfh.Driver_steer_encode_rl_original,self.mpfh.Driver_steer_encode_rr_original]
     def CmdVel_callback(self,msg):
         # print "msg",msg.linear.x
@@ -77,6 +80,33 @@ class IMUDATAINTERGAL():
         self.odemetry_y=y
     def set_pdemetry_theta(self,theta):
         self.odemetry_theta=theta  
+    def Control_to_pose(self,dt,target):
+        # print "haha"
+        delta_x=self.odemetry_x-target[0]
+        delta_y=self.odemetry_y-target[1]
+        rou=sqrt(delta_x**2+delta_y**2)
+        alpha=atan(delta_y/delta_x)-self.odemetry_theta
+        beta=-self.odemetry_theta-alpha+target[2]
+        delta_rou=-self.k_rou*cos(alpha)
+        delta_alpha=self.k_rou*sin(alpha)-self.k_alpha*alpha-self.k_beta*beta
+        delta_beta=-self.k_rou*sin(alpha)
+        rou=rou+delta_rou*dt
+        alpha=alpha+delta_alpha*dt
+        beta=beta+delta_beta*dt
+        vel=self.k_rou*rou
+        gamma=self.k_alpha*alpha+self.k_beta*beta;
+        
+        delta_theta=(tan(gamma)*vel)/(self.car_length)*dt
+        delta_x=vel*cos(self.odemetry_theta)*dt
+        delta_y=vel*sin(self.odemetry_theta)*dt
+        # print 
+        self.odemetry_x=self.odemetry_x+delta_x
+        self.odemetry_y=self.odemetry_y+delta_y
+        self.odemetry_theta=self.odemetry_theta+delta_theta
+        self.pub_vstar.publish(vel)
+        self.pub_x.publish(self.odemetry_x)
+        self.pub_y.publish(self.odemetry_y)
+        self.pub_theta.publish(self.odemetry_theta)
     def Bycycle_Model(self,Vel,Gamma_rad,dt):
         # Vel=0.000001
         # theta=0
@@ -145,7 +175,7 @@ class IMUDATAINTERGAL():
         # print "self.odemetry_x",self.odemetry_x
         print "x-self.odemetry_x,y-self.odemetry_y",x-self.odemetry_x,y-self.odemetry_y
         thetastar=atan((y-self.odemetry_y)/(x-self.odemetry_x))
-        gammastar=Kh*self.andiff(thetastar,theta)#Kh>0
+        gammastar=Kh*self.andiff(thetastar,self.odemetry_theta)#Kh>0
         print "thetastar,theta",thetastar,theta
         self.Bycycle_Model(Vstar,gammastar,dt)
         print "------gammastar-----",gammastar,Vstar,thetastar
@@ -190,8 +220,8 @@ def main():
    x=0
    y=0
    flg=0
-   xg=[5,5]
-   x0=[8,5,pi/2]
+   xg=[10,5,pi/2]
+   x0=[2,5,-pi/4]
    imuobj.set_pdemetry_x(x0[0])
    imuobj.set_pdemetry_y(x0[1])
    imuobj.set_pdemetry_theta(x0[2])
@@ -220,8 +250,8 @@ def main():
             print "----dt---",dt
             dtt+=dt
             # dtttt+=dttt
-        
-            imuobj.Control_mobile_to_one_target(xg[0],xg[1],0.0,0.5,4,0.1)
+        imuobj.Control_to_pose(dt,xg)
+            # imuobj.Control_mobile_to_one_target(xg[0],xg[1],0.0,0.5,4,0.1)
         # else:
             # imuobj.mpfh.Send_Control_Command( imuobj.mpfh.CanAnalysis.yamlDic['sync_data_ID'], imuobj.mpfh.MobileDriver_Command.ZERO_COMMAND)
         # endtime=time.time()
