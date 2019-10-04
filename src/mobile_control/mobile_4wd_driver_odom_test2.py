@@ -135,12 +135,12 @@ class AGV4WDICONTROLLER():
         VA_fi=Vfi*sqrt(1+1/4*(tan(detafr)+tan(detare))**2)/(tan(detafr)*(1/sin(detafi)))
         VA_fo=Vfi*sqrt(1+1/4*(tan(detafr)+tan(detare))**2)/(tan(detafr)*(1/sin(detafo)))
         VA_ri=Vfi*sqrt(1+1/4*(tan(detafr)+tan(detare))**2)/(tan(detare)*(1/sin(detari)))
-        VA_ro=Vfi*sqrt(1+1/4*(tan(detafr)+tan(detare))**2)/(tan(detare)*(1/sin(detar0)))
+        VA_ro=Vfi*sqrt(1+1/4*(tan(detafr)+tan(detare))**2)/(tan(detare)*(1/sin(detaro)))
         VA=(VA_fi+VA_fo+VA_ri+VA_ro)/4
 
         return [detafr,detare,VA]
-    def caculate_XA_YA_phaA_betaA(sef,dt,Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro):
-        VA_detafr_detare=self.caculate_VA_detafr_detare(Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro)
+    def caculate_XA_YA_phaA_betaA(sef,dt,VA_detafr_detare):
+        # VA_detafr_detare=self.caculate_VA_detafr_detare(Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro)
         self.odemetry_beta=self.my_arccot(0.5*(tan(VA_detafr_detare[0])+tan(VA_detafr_detare[1])))
         phaAdot=VA_detafr_detare[2]*cos(self.odemetry_beta)*(tan(VA_detafr_detare[0])-tan(VA_detafr_detare[1]))/self.car_length
         self.odemetry_pha+=phaAdot*dt
@@ -154,8 +154,9 @@ class AGV4WDICONTROLLER():
         e3=self.odemetry_pha-phaR
         e4=self.odemetry_beta-betaR
         return [e1,e2,e3,e4]
-    def caculate_next_time_VA_phaAdot_betaAdot(self,VR,XR,YR,phaR,betaR):
-        error=self.caculate_e1_e2_e3_e4(XR,YR,phaR,betaR)
+    def caculate_next_time_VA_phaAdot_betaAdot(self,error):
+        # error=self.caculate_e1_e2_e3_e4(XR,YR,phaR,betaR)
+        VR=self.vel_reference
         VA=-self.k1*error[0]+VR*cos(error[2])
         phaAdot=self.phaRdot-error[1]*self.k2*VR-self.k3*sin(error[2])
         betaAdot=self.betaRdot-self.k4*error[3]
@@ -179,17 +180,17 @@ class AGV4WDICONTROLLER():
         theta_fi_fl=self.my_arccot(temp_theta_fi_fl)
         theta_ro_rr=self.my_arccot(temp_theta_ro_rr)
         theta_ri_rl=self.my_arccot(temp_theta_ri_rl)
-        return [theta_fo_fr,temp_theta_fi_fl,temp_theta_ro_rr,temp_theta_ri_rl]
+        return [temp_theta_fi_fl,theta_fo_fr,temp_theta_ri_rl,temp_theta_ro_rr]
 
-    def caculate_four_walk_motor_velocity(self,temp_theta_fl_fr_rl_rr,temp_fr_re):
+    def caculate_four_walk_motor_velocity(self,NewVA,temp_theta_fl_fr_rl_rr,temp_fr_re):
         # temp_theta_fl_fr_rl_rr=self.caculate_four_steer_degree_theta()
         # temp_fr_re=self.caculate_bicycle_model_thetafr_re()
 
-        v1_fr_fo=(self.linear_x*tan(temp_fr_re[0]*(1/sin(temp_theta_fl_fr_rl_rr[0]))))/sqrt(1+(1/4)*(tan(temp_fr_re[0])-tan(temp_fr_re[1]))**2)
-        v2_fl_fi=(self.linear_x*tan(temp_fr_re[0]*(1/sin(temp_theta_fl_fr_rl_rr[1]))))/sqrt(1+(1/4)*(tan(temp_fr_re[0])-tan(temp_fr_re[1]))**2)
-        v3_rr_ro=(self.linear_x*tan(temp_fr_re[0]*(1/sin(temp_theta_fl_fr_rl_rr[2]))))/sqrt(1+(1/4)*(tan(temp_fr_re[0])-tan(temp_fr_re[1]))**2)
-        v4_rl_ri=(self.linear_x*tan(temp_fr_re[0]*(1/sin(temp_theta_fl_fr_rl_rr[3]))))/sqrt(1+(1/4)*(tan(temp_fr_re[0])-tan(temp_fr_re[1]))**2)
-        return [v1_fr_fo,v2_fl_fi,v3_rr_ro,v4_rl_ri] 
+        v1_fr_fo=(NewVA*tan(temp_fr_re[0])*(1/sin(temp_theta_fl_fr_rl_rr[1])))/sqrt(1+(1/4)*(tan(temp_fr_re[0])+tan(temp_fr_re[1]))**2)
+        v2_fl_fi=(NewVA*tan(temp_fr_re[0])*(1/sin(temp_theta_fl_fr_rl_rr[0])))/sqrt(1+(1/4)*(tan(temp_fr_re[0])+tan(temp_fr_re[1]))**2)
+        v3_rr_ro=(NewVA*tan(temp_fr_re[1])*(1/sin(temp_theta_fl_fr_rl_rr[3])))/sqrt(1+(1/4)*(tan(temp_fr_re[0])+tan(temp_fr_re[1]))**2)
+        v4_rl_ri=(NewVA*tan(temp_fr_re[1])*(1/sin(temp_theta_fl_fr_rl_rr[2])))/sqrt(1+(1/4)*(tan(temp_fr_re[0])+tan(temp_fr_re[1]))**2)
+        return [v2_fl_fi,v1_fr_fo,v4_rl_ri,v3_rr_ro]
 
 def main():
    agvobj=AGV4WDICONTROLLER()
@@ -213,7 +214,50 @@ def main():
                 flg=1
             agvobj.mpfh.Read_sensor_data_from_driver()
             pathreference=list(agvobj.read_path['path'][count])
-            
+            #####[1] caculate xA,yA,phaA,betaA#########
+            #### first Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro
+            velocity_real_time=agvobj.Caculate_velocity_from_RPM()
+            rad_real_time=agvobj.Caculate_rad_from_position_data()
+            ####sencond caculate VA detafr detare
+            Vfi=velocity_real_time[0]
+            Vfo=velocity_real_time[1]
+            Vri=velocity_real_time[2]
+            Vro=velocity_real_time[3]
+            detafi=rad_real_time[0]
+            detafo=rad_real_time[1]
+            detari=rad_real_time[2]
+            detaro=rad_real_time[3]
+            VA_detafr_detare=agvobj.caculate_VA_detafr_detare(Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro)
+            #####third XA_YA_phaA_betaA
+            XA_YA_phaA_betaA=agvobj.caculate_XA_YA_phaA_betaA(dt,VA_detafr_detare)
+            #####fourth e1_e2_e3_e4
+            XR=pathreference[0]
+            YR=pathreference[1]
+            phaR=pathreference[2]
+            betaR=0
+            error=agvobj.caculate_e1_e2_e3_e4(XR,YR,phaR,betaR)
+            ######fifth caculate_next_time_VA_phaAdot_betaAdot
+            next_time_VA_phaAdot_betaAdot=agvobj.caculate_next_time_VA_phaAdot_betaAdot(error)
+            ####sixth new thetafr_re
+            new_VA=next_time_VA_phaAdot_betaAdot[0]
+            new_phadot=next_time_VA_phaAdot_betaAdot[1]
+            new_model_thetafr_re=agvobj.caculate_bicycle_model_thetafr_re(new_VA,new_phadot)
+            #### seventh caculate_four_steer_degree_theta
+            #### temp_theta_fi_fl,theta_fo_fr,temp_theta_ri_rl,temp_theta_ro_rr
+            four_steer_degree_theta=agvobj.caculate_four_steer_degree_theta(new_model_thetafr_re)
+            #### eighth four_walk_motor_velocity
+            #### v2_fl_fi,v1_fr_fo,v4_rl_ri,v3_rr_ro
+            four_walk_motor_velocity=agvobj.caculate_four_walk_motor_velocity(new_VA,four_steer_degree_theta,new_model_thetafr_re)
+            #### finally control mobile platform
+            wheel_diretion_flg=[-1,1,-1,1]
+            speed_flag=[-1,-1,-1,-1]
+            speedfl=four_walk_motor_velocity[0]
+            speedfr=four_walk_motor_velocity[1]
+            speedrl=four_walk_motor_velocity[2]
+            speedrr=four_walk_motor_velocity[3]
+            agvobj.mpfh.Send_diff_velocity_to_four_walking_wheel(wheel_diretion_flg,speed_flag,speedfl,speedfr,speedrl,speedrr)
+            ratation_flag=[-1.0,-1.0,-1.0,-1.0]
+            agvobj.mpfh.Send_diff_degree_position_to_four_steering_wheel(ratation_flag,four_steer_degree_theta)
         else:
             agvobj.mpfh.Send_Control_Command( agvobj.mpfh.CanAnalysis.yamlDic['sync_data_ID'], agvobj.mpfh.MobileDriver_Command.ZERO_COMMAND)
         endtime=time.time()
