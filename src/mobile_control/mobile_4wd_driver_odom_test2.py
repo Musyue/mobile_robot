@@ -10,6 +10,7 @@ import numpy as np
 from mobile_control.mobileplatform_driver_steptech import *
 from geometry_msgs.msg import Twist
 from scipy.io import loadmat
+import matplotlib.pyplot as plt
 class AGV4WDICONTROLLER():
     def __init__(self):
         self.mpfh=MobilePlatformDriver()
@@ -35,19 +36,23 @@ class AGV4WDICONTROLLER():
         self.odemetry_y=0
         self.odemetry_pha=0
         self.odemetry_beta=0
-        self.vel_reference=0
+        self.vel_reference=0.08
         self.reference_x=0
         self.reference_y=0
         self.reference_pha=0
         self.reference_beta=0
-        self.k1=0
-        self.k2=0
-        self.k3=0
-        self.k4=0
+        self.k1=4
+        self.k2=20
+        self.k3=0.5
+        self.k4=1
         self.phaRdot=0.08
         self.betaRdot=0
-        self.read_path=loadmat('./path.mat')
-        
+        self.read_path=loadmat('/data/ros/yue_wk_2019/src/mobile_robot/src/mobile_control/path.mat')
+        # self.pub_vstar=rospy.Publisher("/vstar",Float64,queue_size=10)
+        # self.pub_x=rospy.Publisher("/x",Float64,queue_size=10)
+        # self.pub_y=rospy.Publisher("/y",Float64,queue_size=10)
+        # self.pub_=rospy.Publisher("/theta",Float64,queue_size=10)
+        self.target_path=[]
         self.homing_original_position=[self.mpfh.Driver_steer_encode_fl_original,self.mpfh.Driver_steer_encode_fr_original,self.mpfh.Driver_steer_encode_rl_original,self.mpfh.Driver_steer_encode_rr_original]
     def CmdVel_callback(self,msg):
         # print "msg",msg.linear.x
@@ -130,7 +135,7 @@ class AGV4WDICONTROLLER():
         #     return 0.0
     def caculate_VA_detafr_detare(self,Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro):
 
-        detafr=self.my_arccot(0.5*(1/tan(detafr)+1/tan(detafo)))
+        detafr=self.my_arccot(0.5*(1/tan(detafi)+1/tan(detafo)))
         detare=self.my_arccot(0.5*(1/tan(detari)+1/tan(detaro)))
         VA_fi=Vfi*sqrt(1+1/4*(tan(detafr)+tan(detare))**2)/(tan(detafr)*(1/sin(detafi)))
         VA_fo=Vfi*sqrt(1+1/4*(tan(detafr)+tan(detare))**2)/(tan(detafr)*(1/sin(detafo)))
@@ -139,7 +144,7 @@ class AGV4WDICONTROLLER():
         VA=(VA_fi+VA_fo+VA_ri+VA_ro)/4
 
         return [detafr,detare,VA]
-    def caculate_XA_YA_phaA_betaA(sef,dt,VA_detafr_detare):
+    def caculate_XA_YA_phaA_betaA(self,dt,VA_detafr_detare):
         # VA_detafr_detare=self.caculate_VA_detafr_detare(Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro)
         self.odemetry_beta=self.my_arccot(0.5*(tan(VA_detafr_detare[0])+tan(VA_detafr_detare[1])))
         phaAdot=VA_detafr_detare[2]*cos(self.odemetry_beta)*(tan(VA_detafr_detare[0])-tan(VA_detafr_detare[1]))/self.car_length
@@ -148,6 +153,7 @@ class AGV4WDICONTROLLER():
         YAdot=VA_detafr_detare[2]*sin(self.odemetry_pha+self.odemetry_beta)
         self.odemetry_x+=XAdot*dt
         self.odemetry_y+=YAdot*dt
+        # self.pub_theta
     def caculate_e1_e2_e3_e4(self,XR,YR,phaR,betaR):
         e1=(self.odemetry_x-XR)*cos(self.odemetry_pha)+(self.odemetry_y-YR)*sin(self.odemetry_pha)
         e2=-(self.odemetry_x-XR)*sin(self.odemetry_pha)+(self.odemetry_y-YR)*cos(self.odemetry_pha)
@@ -190,29 +196,83 @@ class AGV4WDICONTROLLER():
         v2_fl_fi=(NewVA*tan(temp_fr_re[0])*(1/sin(temp_theta_fl_fr_rl_rr[0])))/sqrt(1+(1/4)*(tan(temp_fr_re[0])+tan(temp_fr_re[1]))**2)
         v3_rr_ro=(NewVA*tan(temp_fr_re[1])*(1/sin(temp_theta_fl_fr_rl_rr[3])))/sqrt(1+(1/4)*(tan(temp_fr_re[0])+tan(temp_fr_re[1]))**2)
         v4_rl_ri=(NewVA*tan(temp_fr_re[1])*(1/sin(temp_theta_fl_fr_rl_rr[2])))/sqrt(1+(1/4)*(tan(temp_fr_re[0])+tan(temp_fr_re[1]))**2)
-        return [v2_fl_fi,v1_fr_fo,v4_rl_ri,v3_rr_ro]
+        if abs(v2_fl_fi)>=1 and v2_fl_fi>0 :
+            v2_fl_fi=1
+        elif abs(v2_fl_fi)>=1 and v2_fl_fi<0:
+            v2_fl_fi=-1
+        else:
+            v2_fl_fi=0
 
+        if abs(v1_fr_fo)>=1 and v1_fr_fo>0 :
+            v1_fr_fo=1
+        elif abs(v2_fl_fi)>=1 and v1_fr_fo<0:
+            v1_fr_fo=-1
+        else:
+            v1_fr_fo=0
+
+        if abs(v4_rl_ri)>=1 and v4_rl_ri>0 :
+            v4_rl_ri=1
+        elif abs(v4_rl_ri)>=1 and v4_rl_ri<0:
+            v4_rl_ri=-1
+        else:
+            v4_rl_ri=0
+
+        if abs(v3_rr_ro)>=1 and v3_rr_ro>0 :
+            v3_rr_ro=1
+        elif abs(v3_rr_ro)>=1 and v3_rr_ro<0:
+            v3_rr_ro=-1
+        else:
+            v3_rr_ro=0
+
+        return [v2_fl_fi,v1_fr_fo,v4_rl_ri,v3_rr_ro]
+    def find_closest_point(self,x,y):
+        e=sqrt((x-self.target_path[0][0])**2+(y-self.target_path[0][1])**2)
+        index=0
+        if e!=0:
+            for i in range(len(self.read_path['path'])):
+                e_temp=sqrt((x-self.target_path[i][0])**2+(y-self.target_path[i][1])**2)
+                if e_temp<e:
+                    e=e_temp
+                    index=i
+            return index
+        else:
+            return 
+
+    def add_target(self,):
+        for i in range(len(self.read_path['path'])):
+            self.target_path.append(list(self.read_path['path'][i]))
 def main():
    agvobj=AGV4WDICONTROLLER()
    agvobj.Init_Node()
-   ratet=10
+   ratet=1
    rate=rospy.Rate(ratet)
    zerotime=time.time()
    dt=0
-   agvobj.set_pdemetry_x(x0[0])
-   agvobj.set_pdemetry_y(x0[1])
-   agvobj.set_pdemetry_theta(x0[2])
-   VR=1.0
+#    agvobj.set_pdemetry_x(x0[0])
+#    agvobj.set_pdemetry_y(x0[1])
+#    agvobj.set_pdemetry_theta(x0[2])
+#    VR=1.0
+   flg=0
    count=0
+   xr=[]
+   yr=[]
+   x=[]
+   y=[]
+   plt.ion() #开启interactive mode 成功的关键函数
+   plt.figure(1)
+   agvobj.add_target()
+#    plt.show()
    while not rospy.is_shutdown():
         recevenum=agvobj.mpfh.CanAnalysis.Can_GetReceiveNum(0)
         starttime=time.time()
         # print "recevenum",recevenum
         if recevenum!=None:
             if flg==0:
-                agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1,1,-1,1],1,VR)
+                agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1,1,-1,1],1,agvobj.vel_reference)
                 flg=1
             agvobj.mpfh.Read_sensor_data_from_driver()
+
+            # pathreference=list(agvobj.read_path['path'][agvobj.find_closest_point(agvobj.odemetry_x,agvobj.odemetry_y)])
             pathreference=list(agvobj.read_path['path'][count])
             #####[1] caculate xA,yA,phaA,betaA#########
             #### first Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro
@@ -230,6 +290,7 @@ def main():
             VA_detafr_detare=agvobj.caculate_VA_detafr_detare(Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro)
             #####third XA_YA_phaA_betaA
             XA_YA_phaA_betaA=agvobj.caculate_XA_YA_phaA_betaA(dt,VA_detafr_detare)
+            
             #####fourth e1_e2_e3_e4
             XR=pathreference[0]
             YR=pathreference[1]
@@ -244,6 +305,7 @@ def main():
             new_model_thetafr_re=agvobj.caculate_bicycle_model_thetafr_re(new_VA,new_phadot)
             #### seventh caculate_four_steer_degree_theta
             #### temp_theta_fi_fl,theta_fo_fr,temp_theta_ri_rl,temp_theta_ro_rr
+
             four_steer_degree_theta=agvobj.caculate_four_steer_degree_theta(new_model_thetafr_re)
             #### eighth four_walk_motor_velocity
             #### v2_fl_fi,v1_fr_fo,v4_rl_ri,v3_rr_ro
@@ -255,14 +317,25 @@ def main():
             speedfr=four_walk_motor_velocity[1]
             speedrl=four_walk_motor_velocity[2]
             speedrr=four_walk_motor_velocity[3]
+
             agvobj.mpfh.Send_diff_velocity_to_four_walking_wheel(wheel_diretion_flg,speed_flag,speedfl,speedfr,speedrl,speedrr)
             ratation_flag=[-1.0,-1.0,-1.0,-1.0]
             agvobj.mpfh.Send_diff_degree_position_to_four_steering_wheel(ratation_flag,four_steer_degree_theta)
+            xr.append(XR)
+            yr.append(YR)
+            x.append(agvobj.odemetry_x)
+            y.append(agvobj.odemetry_y)
+            print "x,y",x,y
+            plt.plot(xr,yr,'ro',x,y,'bs')
+            plt.draw()
+            plt.pause(0.01)
         else:
-            agvobj.mpfh.Send_Control_Command( agvobj.mpfh.CanAnalysis.yamlDic['sync_data_ID'], agvobj.mpfh.MobileDriver_Command.ZERO_COMMAND)
+            agvobj.mpfh.Send_Control_Command(agvobj.mpfh.CanAnalysis.yamlDic['sync_data_ID'], agvobj.mpfh.MobileDriver_Command.ZERO_COMMAND)
         endtime=time.time()
         dt=endtime-starttime
         count+=1
+        if count>100:
+            count=0
         rate.sleep() 
 if __name__=="__main__":
     main()
