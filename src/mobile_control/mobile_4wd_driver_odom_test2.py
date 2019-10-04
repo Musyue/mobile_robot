@@ -9,6 +9,7 @@ from math import *
 import numpy as np
 from mobile_control.mobileplatform_driver_steptech import *
 from geometry_msgs.msg import Twist
+from scipy.io import loadmat
 class AGV4WDICONTROLLER():
     def __init__(self):
         self.mpfh=MobilePlatformDriver()
@@ -45,6 +46,8 @@ class AGV4WDICONTROLLER():
         self.k4=0
         self.phaRdot=0.08
         self.betaRdot=0
+        self.read_path=loadmat('./path.mat')
+        
         self.homing_original_position=[self.mpfh.Driver_steer_encode_fl_original,self.mpfh.Driver_steer_encode_fr_original,self.mpfh.Driver_steer_encode_rl_original,self.mpfh.Driver_steer_encode_rr_original]
     def CmdVel_callback(self,msg):
         # print "msg",msg.linear.x
@@ -194,40 +197,28 @@ def main():
    ratet=10
    rate=rospy.Rate(ratet)
    zerotime=time.time()
-#    theta=0#(x,y,theta)
-   gama=0#(roation angular)
-   v=0.1331
    dt=0
-   x=0
-   y=0
-   flg=0
-   xg=[5,5]
-   x0=[8,5,0]
    agvobj.set_pdemetry_x(x0[0])
    agvobj.set_pdemetry_y(x0[1])
    agvobj.set_pdemetry_theta(x0[2])
+   VR=1.0
+   count=0
    while not rospy.is_shutdown():
         recevenum=agvobj.mpfh.CanAnalysis.Can_GetReceiveNum(0)
         starttime=time.time()
         # print "recevenum",recevenum
         if recevenum!=None:
-            # if flg==0:
-            #     agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1,1,-1,1],1,1.0)
-            #     flg=1
-            # print agvobj.linear_x
+            if flg==0:
+                agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1,1,-1,1],1,VR)
+                flg=1
             agvobj.mpfh.Read_sensor_data_from_driver()
-            # agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],1,0.5)
-            # kk=agvobj.Cmd_vel_control_for_test()
-
-            # Vel=agvobj.Caculate_velocity_from_RPM()
-            # agvobj.Bycycle_Model(Vel,0.0)
-            if dt!=0:
-                print "----dt---",dt
-                agvobj.Control_mobile_to_one_target(xg[0],xg[1],0.0,0.5,0.5,dt)
+            pathreference=list(agvobj.read_path['path'][count])
+            
         else:
             agvobj.mpfh.Send_Control_Command( agvobj.mpfh.CanAnalysis.yamlDic['sync_data_ID'], agvobj.mpfh.MobileDriver_Command.ZERO_COMMAND)
         endtime=time.time()
         dt=endtime-starttime
+        count+=1
         rate.sleep() 
 if __name__=="__main__":
     main()
