@@ -94,7 +94,7 @@ class IMUDATAINTERGAL():
         alpha=alpha+delta_alpha*dt
         beta=beta+delta_beta*dt
         vel=self.k_rou*rou
-        gamma=self.k_alpha*alpha+self.k_beta*beta;
+        gamma=self.k_alpha*alpha+self.k_beta*beta
         
         delta_theta=(tan(gamma)*vel)/(self.car_length)*dt
         delta_x=vel*cos(self.odemetry_theta)*dt
@@ -140,8 +140,8 @@ class IMUDATAINTERGAL():
         print "----d------",d
         print "th1,th2",th1,th2
         return (d+pi)%(2.0*pi) - pi
-    def mod_function(self,a,m):
-        return a - m*int(a/m)
+    # def mod_function(self,a,m):
+    #     return a - m*int(a/m)
 
     def Caculate_velocity_from_angular_z(self,angular_velocity_z,gamma_rad):
         vel=(angular_velocity_z*self.car_length)/tan(gamma_rad)
@@ -166,6 +166,59 @@ class IMUDATAINTERGAL():
     #             return (abs(Velocity[0])+abs(Velocity[1])+abs(Velocity[2])+abs(Velocity[3]))/4
     #     else:
     #         return 0.0
+    def caculate_bicycle_model_thetafr_re(self):
+
+        # print self.linear_x,self.angular_z
+        if self.linear_x!=0:
+            thetafr=atan((self.angular_z*self.car_length)/(2.0*self.linear_x))
+            thetare=atan(-tan(thetafr))
+            return [thetafr,thetare]
+        else:
+            return [0.0,0.0]
+    def my_arccot(self,x):
+        return pi/2-atan(x)
+        # if x>0:
+        #     return atan(1/x)+pi
+        # elif x<0:
+        #     return atan(1/x)
+        # else:
+        #     return 0.0
+
+    def caculate_four_steer_degree_theta(self):
+        """
+        arccot(x)=
+        {
+            arctan(1/x)+π(x>0)
+            arctan(1/x)(x<0)
+        }
+        """
+        temp_fr_re=self.caculate_bicycle_model_thetafr_re()
+        # numpy.arccot()
+        if 0 not in temp_fr_re:
+            temp_theta_fo_fr=(1/tan(temp_fr_re[0]))*(1+(self.car_width/self.car_length)*(tan(temp_fr_re[0])-tan(temp_fr_re[1])))
+            temp_theta_fi_fl=(1/tan(temp_fr_re[0]))*(1-(self.car_width/self.car_length)*(tan(temp_fr_re[0])-tan(temp_fr_re[1])))
+            temp_theta_ro_rr=(1/tan(temp_fr_re[1]))*(1+(self.car_width/self.car_length)*(tan(temp_fr_re[0])-tan(temp_fr_re[1])))
+            temp_theta_ri_rl=(1/tan(temp_fr_re[1]))*(1-(self.car_width/self.car_length)*(tan(temp_fr_re[0])-tan(temp_fr_re[1])))
+            theta_fo_fr=self.my_arccot(temp_theta_fo_fr)
+            theta_fi_fl=self.my_arccot(temp_theta_fi_fl)
+            theta_ro_rr=self.my_arccot(temp_theta_ro_rr)
+            theta_ri_rl=self.my_arccot(temp_theta_ri_rl)
+            return [theta_fo_fr,temp_theta_fi_fl,temp_theta_ro_rr,temp_theta_ri_rl]
+        else:
+            # print "bicycle model temp_fr_re data may be not right------",temp_fr_re
+            return [0.0,0.0,0.0,0.0]
+    def caculate_four_walk_motor_velocity(self):
+        temp_theta_fl_fr_rl_rr=self.caculate_four_steer_degree_theta()
+        temp_fr_re=self.caculate_bicycle_model_thetafr_re()
+        if 0.0 not in temp_fr_re:
+            v1_fr_fo=(self.linear_x*tan(temp_fr_re[0]*(1/sin(temp_theta_fl_fr_rl_rr[0]))))/sqrt(1+(1/4)*(tan(temp_fr_re[0])-tan(temp_fr_re[1]))**2)
+            v2_fl_fi=(self.linear_x*tan(temp_fr_re[0]*(1/sin(temp_theta_fl_fr_rl_rr[1]))))/sqrt(1+(1/4)*(tan(temp_fr_re[0])-tan(temp_fr_re[1]))**2)
+            v3_rr_ro=(self.linear_x*tan(temp_fr_re[0]*(1/sin(temp_theta_fl_fr_rl_rr[2]))))/sqrt(1+(1/4)*(tan(temp_fr_re[0])-tan(temp_fr_re[1]))**2)
+            v4_rl_ri=(self.linear_x*tan(temp_fr_re[0]*(1/sin(temp_theta_fl_fr_rl_rr[3]))))/sqrt(1+(1/4)*(tan(temp_fr_re[0])-tan(temp_fr_re[1]))**2)
+            return [v1_fr_fo,v2_fl_fi,v3_rr_ro,v4_rl_ri] 
+        else:
+            # print "the mobile platform walking in line---"  
+            return [self.linear_x,self.linear_x,self.linear_x,self.linear_x] 
     def Control_mobile_to_one_target(self,x,y,theta,Kv,Kh,dt):
         """
         World coordinate:[x,y,theta]

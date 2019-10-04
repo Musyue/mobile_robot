@@ -39,6 +39,12 @@ class AGV4WDICONTROLLER():
         self.reference_y=0
         self.reference_pha=0
         self.reference_beta=0
+        self.k1=0
+        self.k2=0
+        self.k3=0
+        self.k4=0
+        self.phaRdot=0.08
+        self.betaRdot=0
         self.homing_original_position=[self.mpfh.Driver_steer_encode_fl_original,self.mpfh.Driver_steer_encode_fr_original,self.mpfh.Driver_steer_encode_rl_original,self.mpfh.Driver_steer_encode_rr_original]
     def CmdVel_callback(self,msg):
         # print "msg",msg.linear.x
@@ -89,24 +95,21 @@ class AGV4WDICONTROLLER():
         return vel
     def Caculate_velocity_from_RPM(self):
         # Velocity=[]
-        if self.mpfh.Driver_walk_velocity_encode_fl!=0 and self.mpfh.Driver_walk_velocity_encode_fr!=0 and self.mpfh.Driver_walk_velocity_encode_rl!=0 and self.mpfh.Driver_walk_velocity_encode_rr!=0:
-            # print self.mpfh.Driver_walk_velocity_encode_fl
-            # print self.mpfh.Driver_walk_velocity_encode_fr
-            # print self.mpfh.Driver_walk_velocity_encode_rl
-            # print self.mpfh.Driver_walk_velocity_encode_rr
-            RPM_fl=self.mpfh.Dec_to_RPM(self.mpfh.Driver_walk_velocity_encode_fl)
-            RPM_fr=self.mpfh.Dec_to_RPM(self.mpfh.Driver_walk_velocity_encode_fr)
-            RPM_rl=self.mpfh.Dec_to_RPM(self.mpfh.Driver_walk_velocity_encode_rl)
-            RPM_rr=self.mpfh.Dec_to_RPM(self.mpfh.Driver_walk_velocity_encode_rr)
-            Velocity=[(RPM_fl*2*pi*self.wheel_R)/60.0,(RPM_fr*2*pi*self.wheel_R)/60.0,(RPM_rl*2*pi*self.wheel_R)/60.0,(RPM_rr*2*pi*self.wheel_R)/60.0]
-            print "------Velocity---------",Velocity#self.mpfh.Driver_walk_velocity_encode_fl
-            if max(Velocity)-min(Velocity)>10.0:
-                return 0.0
-            else:
-                print "From Wheel Encode Velocity-------",(abs(Velocity[0])+abs(Velocity[1])+abs(Velocity[2])+abs(Velocity[3]))/4
-                return (abs(Velocity[0])+abs(Velocity[1])+abs(Velocity[2])+abs(Velocity[3]))/4
-        else:
-            return 0.0
+
+        RPM_fl=self.mpfh.Dec_to_RPM(self.mpfh.Driver_walk_velocity_encode_fl)
+        RPM_fr=self.mpfh.Dec_to_RPM(self.mpfh.Driver_walk_velocity_encode_fr)
+        RPM_rl=self.mpfh.Dec_to_RPM(self.mpfh.Driver_walk_velocity_encode_rl)
+        RPM_rr=self.mpfh.Dec_to_RPM(self.mpfh.Driver_walk_velocity_encode_rr)
+        Velocity=[(RPM_fl*2*pi*self.wheel_R)/60.0,(RPM_fr*2*pi*self.wheel_R)/60.0,(RPM_rl*2*pi*self.wheel_R)/60.0,(RPM_rr*2*pi*self.wheel_R)/60.0]
+        print "------Velocity---------",Velocity#self.mpfh.Driver_walk_velocity_encode_fl
+        return Velocity
+
+    def Caculate_rad_from_position_data(self):
+        detafi=self.mpfh.Pos_to_rad(self.mpfh.Driver_steer_encode_fl-self.mpfh.Driver_steer_encode_fl_original)
+        detafo=self.mpfh.Pos_to_rad(self.mpfh.Driver_steer_encode_fr-self.mpfh.Driver_steer_encode_fr_original)
+        detari=self.mpfh.Pos_to_rad(self.mpfh.Driver_steer_encode_rl-self.mpfh.Driver_steer_encode_rl_original)
+        detaro=self.mpfh.Pos_to_rad(self.mpfh.Driver_steer_encode_rr-self.mpfh.Driver_steer_encode_rr_original)
+        return [detafi,detafo,detari,detaro]
     def caculate_bicycle_model_thetafr_re(self,VA,phadot):
         # print self.linear_x,self.angular_z
 
@@ -147,6 +150,14 @@ class AGV4WDICONTROLLER():
         e2=-(self.odemetry_x-XR)*sin(self.odemetry_pha)+(self.odemetry_y-YR)*cos(self.odemetry_pha)
         e3=self.odemetry_pha-phaR
         e4=self.odemetry_beta-betaR
+        return [e1,e2,e3,e4]
+    def caculate_next_time_VA_phaAdot_betaAdot(self,VR,XR,YR,phaR,betaR):
+        error=self.caculate_e1_e2_e3_e4(XR,YR,phaR,betaR)
+        VA=-self.k1*error[0]+VR*cos(error[2])
+        phaAdot=self.phaRdot-error[1]*self.k2*VR-self.k3*sin(error[2])
+        betaAdot=self.betaRdot-self.k4*error[3]
+        return [VA,phaAdot,betaAdot]
+    
     def caculate_four_steer_degree_theta(self,temp_fr_re):
         """
         arccot(x)=

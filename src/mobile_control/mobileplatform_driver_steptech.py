@@ -489,6 +489,9 @@ class MobilePlatformDriver():
         return (degree_data*pi)/180
     def Dec_to_RPM(self,DEC_data):
         return (DEC_data*1875.0)/(512*10000)
+    def Pos_to_rad(self,pose_dec):
+        #rad*(220*1024*4.0)/(2.0*pi)
+        return pose_dec*(2.0*pi)/(220*1024*4.0)
     def output_pulse_position_control_multi(self,flag_list,rad_fl,rad_fr,rad_rl,rad_rr):
         """
         flag_list=[]
