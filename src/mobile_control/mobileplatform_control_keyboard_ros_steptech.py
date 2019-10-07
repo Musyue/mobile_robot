@@ -273,11 +273,16 @@ def main():
     # settings = termios.tcgetattr(sys.stdin)
 
     mpfh=MobilePlatFormKeyboardControl()
-
+    
 
     mpfh.Init_Ros_Node()
+    
+    mpfh.MobileControl.Init_can()
+    start=time.time()
     mpfh.Init_mobile_driver()
-    time.sleep(3)
+    end=time.time()
+    print "end---",end-start
+    # time.sleep(3)
 # mpfh.Init_mobile_driver()
     # mpfh.MobileControl.CanAnalysis.Can_ReadBoardInfo()
     pub = rospy.Publisher('/cmd_vel', Twist, queue_size=5)
@@ -340,6 +345,7 @@ def main():
                 mpfh.MobileControl.Send_Position_Driver(int(OutputPulse[3]),mpfh.MobileControl.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_right_rpdo']['rpdo']['rpdo3'])
                 flg=0
         recevenum=mpfh.MobileControl.CanAnalysis.Can_GetReceiveNum(0)
+
         if recevenum!=None:
             mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
 
@@ -489,7 +495,7 @@ def main():
                 if (key == '\x03'):
                     break
         else:
-            mpfh.New_Read_Encoder_data_From_ABS_Encoder(recevenum)
+            recevenum=mpfh.MobileControl.CanAnalysis.Can_GetReceiveNum(0)
         rate.sleep()
         # else:
         #     print "wait data from driver data from feedback topic ----------"

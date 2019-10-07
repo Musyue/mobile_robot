@@ -51,10 +51,10 @@ class MobilePlatformDriver():
         self.CanAnalysis.Init_Can_All() #初始化can分析仪，注意这里没有关闭分析仪
     def Open_driver_can_Node(self,IDD,Frames_Length):
         enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,0,self.Datalen,self.MobileDriver_Command.OPEN_CAN_NODE_DRIVER)
-        time.sleep(0.0015)
+        # time.sleep(0.0015)
     def Close_driver_can_Node(self,IDD,Frames_Length):
         enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,0,self.Datalen,self.MobileDriver_Command.CLOSE_CAN_NODE_DRIVER)
-        time.sleep(0.0015)
+        # time.sleep(0.0015)
     def Enable_Motor_controller(self,IDD,Frames_Length,flag):
         """
         flag=1,velocity
@@ -62,32 +62,32 @@ class MobilePlatformDriver():
         """
         if flag:
             enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,IDD,self.Datalen,self.MobileDriver_Command.ENABLE_DRIVER_SET_VELOCITY)
-            time.sleep(0.0015)
+            # time.sleep(0.0015)
         else:
             enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,IDD,self.Datalen,self.MobileDriver_Command.ENABLE_DRIVER_SET_POSITION)
-            time.sleep(0.0015)
+            # time.sleep(0.0015)
         
     def Enable_Steering_Controller(self,flag):
         self.logger.loggerinfo("Enable Steering Motor Controller","GREEN")
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel_pdo']['front_steering_left_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],flag)
-        time.sleep(0.001)
+        # time.sleep(0.001)
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel_pdo']['front_steering_right_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],flag)
-        time.sleep(0.001)
+        # time.sleep(0.001)
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_left_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],flag)
-        time.sleep(0.001)
+        # time.sleep(0.001)
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_right_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],flag)
-        time.sleep(0.001)
+        # time.sleep(0.001)
 
     def Enable_Walking_Controller(self,flag):
         self.logger.loggerinfo("Enable Walking Motor Controller","GREEN")
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_left_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],flag)
-        time.sleep(0.001)
+        # time.sleep(0.001)
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_right_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],flag)
-        time.sleep(0.001)
+        # time.sleep(0.001)
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_left_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],flag)
-        time.sleep(0.001)
+        # time.sleep(0.001)
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_right_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],flag)
-        time.sleep(0.001)
+        # time.sleep(0.001)
     def Enable_Motor_Controller_All(self):
         self.logger.loggerinfo("Enable Steering and Walking Motor Controller","GREEN")
         self.Enable_Steering_Controller(0)
@@ -139,7 +139,7 @@ class MobilePlatformDriver():
     def Send_Control_Command(self,IDD,Commands):
         
         mod_cmd=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],self.CanAnalysis.yamlDic['Frames_Length'],IDD,self.Datalen,Commands)
-        time.sleep(0.0015)
+        # time.sleep(0.0015)
         if mod_cmd:
             infostr='Command:'+str(Commands)+'send Ok!!!'
             self.logger.loggerinfo(infostr)

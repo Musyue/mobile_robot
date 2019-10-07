@@ -45,6 +45,10 @@ class AGV4WDICONTROLLER():
         self.k2=20
         self.k3=0.5
         self.k4=1
+        ####hoffamn
+        self.st=tan(0)
+        self.phi=0#gama
+        self.index_ref=0
         self.phaRdot=0.08
         self.betaRdot=0
         self.read_path=loadmat('/data/ros/yue_wk_2019/src/mobile_robot/src/mobile_control/path.mat')
@@ -73,10 +77,10 @@ class AGV4WDICONTROLLER():
     def Init_Node(self):
         
         rospy.init_node("imu_data_for_mobileplatform")
-        self.mpfh.Init_can()
-        self.mpfh.Open_driver_can_Node(0x00000000,1)
-        self.mpfh.Enable_Motor_Controller_All()
-        self.mpfh.Send_trapezoid_Velocity(2500)
+        # self.mpfh.Init_can()
+        # self.mpfh.Open_driver_can_Node(0x00000000,1)
+        # self.mpfh.Enable_Motor_Controller_All()
+        # self.mpfh.Send_trapezoid_Velocity(2500)
     def Imu_callback(self,msg):
         self.ImuOrientation=(msg.orientation.x,msg.orientation.y,msg.orientation.z,msg.orientation.w)
         self.ImuAngularvelocity=(msg.angular_velocity.x,msg.angular_velocity.y,msg.angular_velocity.z)
@@ -216,7 +220,8 @@ class AGV4WDICONTROLLER():
         else:
             return rad-pi
         # return (rad+pi/2.0)%(pi/2.0) - pi/2.0
-
+    def Set_rad_in_pi(self,rad):
+        return (rad+pi)%(pi*2.0) - pi
     def caculate_four_walk_motor_velocity(self,NewVA,temp_theta_fl_fr_rl_rr,temp_fr_re):
         # temp_theta_fl_fr_rl_rr=self.caculate_four_steer_degree_theta()
         # temp_fr_re=self.caculate_bicycle_model_thetafr_re()
@@ -279,11 +284,46 @@ class AGV4WDICONTROLLER():
     def add_target(self,):
         for i in range(len(self.read_path['path'])):
             self.target_path.append(list(self.read_path['path'][i]))
+    def sign(self,x):
+        if x!=0.0:
+            return x/abs(x)
+        else:
+            return 0.0
+    def hoffman_control(self,point_ref_all,dt):
+        self.odemetry_x=self.odemetry_x+self.vel_reference*cos(self.odemetry_pha)*dt
+        self.odemetry_y=self.odemetry_y+self.vel_reference*sin(self.odemetry_pha)*dt
+        self.odemetry_pha=self.odemetry_pha+self.vel_reference*(1.0/self.car_length)*self.st*dt
+        self.odemetry_pha=self.Set_rad_in_pi(self.odemetry_pha)
+        e=sqrt((self.odemetry_x-point_ref_all[0][0])**2+(self.odemetry_y-point_ref_all[0][1])**2)
+        for i in range(2,len(point_ref_all)):
+            etmp=sqrt((self.odemetry_x-point_ref_all[i][0])**2+(self.odemetry_y-point_ref_all[i][1])**2)
+            if etmp<e:
+                e=etmp
+                self.index_ref=i
+        print "self.index_ref",self.index_ref
+        point_ref=point_ref_all[self.index_ref]
+        ex1=point_ref[0]-self.odemetry_x
+        ey1=point_ref[1]-self.odemetry_y
+        ex2=cos(point_ref[2])
+        ey2=sin(point_ref[2])
+        sinnn=ex1*ey2-ey1*ex2
+        e=self.sign(sinnn)*e
+        self.phi=point_ref[2]- self.odemetry_pha+atan(e)
+        self.st=tan(self.phi)
+        if abs(self.st)>=1.0:
+            self.st=1.0*self.sign(self.st)
+        else:
+            self.st=self.st
+    def set_array_to_list(self,array_num):
+        newtemp=[]
+        for i in range(len(array_num)):
+            newtemp.append(list(array_num[i]))
+        return newtemp
 def main():
    agvobj=AGV4WDICONTROLLER()
    agvobj.Init_Node()
-   time.sleep(3)
-   ratet=1
+#    time.sleep(3)
+   ratet=100
    rate=rospy.Rate(ratet)
    zerotime=time.time()
    dt=0
@@ -309,101 +349,23 @@ def main():
    flagg=1
    flaggg=1
    while not rospy.is_shutdown():
-        recevenum=agvobj.mpfh.CanAnalysis.Can_GetReceiveNum(0)
+
         starttime=time.time()
-        # print "recevenum",recevenum
-        if recevenum!=None:
-            if flg==0:
-                agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1,agvobj.vel_reference)
-                time.sleep(0.5)
-                # agvobj.mpfh.Send_position_to_four_steering_wheel(agvobj.homing_original_position)
-                flg=1
-            agvobj.mpfh.Read_sensor_data_from_driver()
 
-            # pathreference=list(agvobj.read_path['path'][agvobj.find_closest_point(agvobj.odemetry_x,agvobj.odemetry_y)])
-            pathreference=list(agvobj.read_path['path'][count])
-            #####[1] caculate xA,yA,phaA,betaA#########
-            #### first Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro
-            if flagg==1:
-                velocity_real_time=agvobj.Caculate_velocity_from_RPM()
-                
-            if len(velocity_real_time)!=0:
-                rad_real_time=agvobj.Caculate_rad_from_position_data()
-                print "velocity_real_time",velocity_real_time
-                print "rad_real_time",rad_real_time
-                if flaggg==1:
-                ####sencond caculate VA detafr detare
-                    Vfi=velocity_real_time[0]
-                    Vfo=velocity_real_time[1]
-                    Vri=velocity_real_time[2]
-                    Vro=velocity_real_time[3]
-                    flagg=0
-                    flaggg=0
-                else:
-                    Vfi=speedfl
-                    Vfo=speedfr
-                    Vri=speedrl
-                    Vro=speedrr
-                detafi=rad_real_time[0]
-                detafo=rad_real_time[1]
-                detari=rad_real_time[2]
-                detaro=rad_real_time[3]
-                VA_detafr_detare=agvobj.caculate_VA_detafr_detare(Vfi,Vfo,Vri,Vro,detafi,detafo,detari,detaro)
-                #####third XA_YA_phaA_betaA
-                agvobj.caculate_XA_YA_phaA_betaA(dt,VA_detafr_detare)
-                print "XA_YA_phaA_betaA",agvobj.odemetry_x,agvobj.odemetry_y,agvobj.odemetry_beta,agvobj.odemetry_pha
-                #####fourth e1_e2_e3_e4
-                XR=pathreference[0]
-                YR=pathreference[1]
-                phaR=pathreference[2]
-                betaR=0.0
-                print "pathreference",pathreference
-                error=agvobj.caculate_e1_e2_e3_e4(XR,YR,phaR,betaR)
-                ######fifth caculate_next_time_VA_phaAdot_betaAdot
-                print "--error",error
-                next_time_VA_phaAdot_betaAdot=agvobj.caculate_next_time_VA_phaAdot_betaAdot(error)
-                ####sixth new thetafr_re
-                print "next_time_VA_phaAdot_betaAdot",next_time_VA_phaAdot_betaAdot
-                new_VA=next_time_VA_phaAdot_betaAdot[0]
-                new_phadot=next_time_VA_phaAdot_betaAdot[1]
-                print "new_VA,new_phadot",new_VA,new_phadot
-                new_model_thetafr_re=agvobj.caculate_bicycle_model_thetafr_re(new_VA,new_phadot)
-                print "new_model_thetafr_re",new_model_thetafr_re
-                #### seventh caculate_four_steer_degree_theta
-                #### temp_theta_fi_fl,theta_fo_fr,temp_theta_ri_rl,temp_theta_ro_rr
+        pathreference=agvobj.set_array_to_list(agvobj.read_path['path'])
+        # print "pathreference",pathreference,len(pathreference)
+        agvobj.hoffman_control(pathreference,dt)
 
-                four_steer_degree_theta=agvobj.caculate_four_steer_degree_theta(new_model_thetafr_re)
-                print "four_steer_degree_theta",four_steer_degree_theta
-                #### eighth four_walk_motor_velocity
-                #### v2_fl_fi,v1_fr_fo,v4_rl_ri,v3_rr_ro
-                four_walk_motor_velocity=agvobj.caculate_four_walk_motor_velocity(new_VA,four_steer_degree_theta,new_model_thetafr_re)
-                #### finally control mobile platform
-                print "four_walk_motor_velocity",four_walk_motor_velocity
-                wheel_diretion_flg=[-1.0,1.0,-1.0,1.0]
-                speed_flag=[-1.0,-1.0,-1.0,-1.0]
-                speedfl=four_walk_motor_velocity[0]
-                speedfr=four_walk_motor_velocity[1]
-                speedrl=four_walk_motor_velocity[2]
-                speedrr=four_walk_motor_velocity[3]
-                print "speedfl,speedfr,speedrl,speedrr",speedfl,speedfr,speedrl,speedrr
-                agvobj.mpfh.Send_diff_velocity_to_four_walking_wheel(wheel_diretion_flg,speed_flag,speedfl,speedfr,speedrl,speedrr)
-                ratation_flag=[-1.0,-1.0,-1.0,-1.0]
-
-                agvobj.mpfh.Send_diff_degree_position_to_four_steering_wheel(ratation_flag,four_steer_degree_theta)
-                xr.append(XR)
-                yr.append(YR)
-                x.append(agvobj.odemetry_x)
-                y.append(agvobj.odemetry_y)
-                # print "x,y",x,y
-                plt.plot(xr,yr,'ro',x,y,'bs')
-                plt.draw()
-                plt.pause(0.01)
-                count+=1
-                print "count",count
-                if count>100:
-                    count=0
-        else:
-            agvobj.mpfh.Send_Control_Command(agvobj.mpfh.CanAnalysis.yamlDic['sync_data_ID'], agvobj.mpfh.MobileDriver_Command.ZERO_COMMAND)
+        xr.append(pathreference[agvobj.index_ref][0])
+        yr.append(pathreference[agvobj.index_ref][1])
+        x.append(agvobj.odemetry_x)
+        y.append(agvobj.odemetry_y)
+        # print "x,y",x,y
+        plt.plot(xr,yr,'ro',x,y,'bs')
+        plt.draw()
+        plt.pause(0.01)
+        count+=1
+        print "count",count
         endtime=time.time()
         dt=endtime-starttime
 
