@@ -240,13 +240,14 @@ class MobilePlatformDriver():
         return status_byte
     def OCT_List_To_Oct_Four(self,Octlist,flag):
         """
-        flag=1:velocity
-        flag=0:position
+        flag=0:velocity
+        flag=1:position
         """
         # print "Hexstrlist",Hexstrlist
         temp=[]
         for i in Octlist:
             temp.append(i)
+        # print "temp",temp
         if flag:
             if self.Judge_data_NOT_POSITIVE_OR_Negative(temp[7]):
                 return -1*(~(temp[7]<<24|temp[6]<<16|temp[5]<<8|temp[4]-1)&0xFFFFFFFF)
@@ -349,22 +350,22 @@ class MobilePlatformDriver():
                         # print "steering fl data ID",hex(kk[i].ID)
                         # print "steering fl hexdata--------",self.List_to_HEXList(list(kk[i].Data))
                         # print "steering fl hexdata position --------",self.OCT_List_To_Oct_Four(list(kk[i].Data),1)
-                        self.Driver_steer_encode_fl=self.OCT_List_To_Oct_Four(list(kk[i].Data),0)
+                        self.Driver_steer_encode_fl=self.OCT_List_To_Oct_Four(list(kk[i].Data),1)
                     if kk[i].ID==0x286:
                         # print "steering fr data ID",hex(kk[i].ID)
                         # print "steering fr hexdata--------",self.List_to_HEXList(list(kk[i].Data))
                         # print "steering fr hexdata position --------",self.OCT_List_To_Oct_Four(list(kk[i].Data),1)
-                        self.Driver_steer_encode_fr=self.OCT_List_To_Oct_Four(list(kk[i].Data),0)
+                        self.Driver_steer_encode_fr=self.OCT_List_To_Oct_Four(list(kk[i].Data),1)
                     if kk[i].ID==0x287:
                         # print "steering rl data ID",hex(kk[i].ID)
                         # print "steering rl hexdata--------",self.List_to_HEXList(list(kk[i].Data))
                         # print "steering rl hexdata position --------",self.OCT_List_To_Oct_Four(list(kk[i].Data),1)
-                        self.Driver_steer_encode_rl=self.OCT_List_To_Oct_Four(list(kk[i].Data),0)
+                        self.Driver_steer_encode_rl=self.OCT_List_To_Oct_Four(list(kk[i].Data),1)
                     if kk[i].ID==0x288:
                         # print "steering rr data ID",hex(kk[i].ID)
                         # print "steering rr hexdata--------",self.List_to_HEXList(list(kk[i].Data))
                         # print "steering rr hexdata position --------",self.OCT_List_To_Oct_Four(list(kk[i].Data),1)
-                        self.Driver_steer_encode_rr=self.OCT_List_To_Oct_Four(list(kk[i].Data),0)
+                        self.Driver_steer_encode_rr=self.OCT_List_To_Oct_Four(list(kk[i].Data),1)
     def List_to_HEXList(self,Listdata):
         temp=[]
         for i in Listdata:
@@ -463,7 +464,7 @@ class MobilePlatformDriver():
         speed_flag--->list
         """
         VelocityDatafl= self.caculate_velocity(speed_flag[0]*speedfl)#all motor 45degree velocity
-        print "VelocityDatafl:RPM/Min",VelocityDatafl
+        print "Send velocity command VelocityDatafl:RPM/Min",VelocityDatafl
         VelocityDatafr= self.caculate_velocity(speed_flag[0]*speedfr)#all motor 45degree velocity
         print "VelocityDatafr:RPM/Min",VelocityDatafr
         VelocityDatarl= self.caculate_velocity(speed_flag[0]*speedrl)#all motor 45degree velocity
@@ -554,13 +555,16 @@ def main():
     mpd=MobilePlatformDriver()
     count=1
     flag=0
+    mpd.Init_can()
     mpd.Open_driver_can_Node(0x00000000,1)
     mpd.Read_sensor_data_from_driver()
     time.sleep(1)
     mpd.Enable_Motor_Controller_All()
+    # print mpd.Driver_steer_encode_fl,mpd.Driver_steer_encode_fr,mpd.Driver_steer_encode_rl,mpd.Driver_steer_encode_rr
     time.sleep(1)
     mpd.Read_sensor_data_from_driver()
     # time.sleep(3)
+    # print mpd.Driver_steer_encode_fl,mpd.Driver_steer_encode_fr,mpd.Driver_steer_encode_rl,mpd.Driver_steer_encode_rr
     mpd.Read_sensor_data_from_driver()
     print "homing is ok----!!!"
     # while count:

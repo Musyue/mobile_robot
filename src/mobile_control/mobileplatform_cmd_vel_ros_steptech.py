@@ -388,7 +388,7 @@ def main():
     control_speed = 0
     control_turn = 0
 
-    ratet=10
+    ratet=100
 
     rate = rospy.Rate(ratet)
 
