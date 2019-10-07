@@ -238,6 +238,7 @@ class MobilePlatformDriver():
             # print velocity
         status_byte=status_byte.zfill(len(status_byte)+16-len(status_byte))
         return status_byte
+
     def OCT_List_To_Oct_Four(self,Octlist,flag):
         """
         flag=0:velocity
@@ -557,16 +558,18 @@ def main():
     flag=0
     mpd.Init_can()
     mpd.Open_driver_can_Node(0x00000000,1)
-    mpd.Read_sensor_data_from_driver()
-    time.sleep(1)
-    mpd.Enable_Motor_Controller_All()
-    # print mpd.Driver_steer_encode_fl,mpd.Driver_steer_encode_fr,mpd.Driver_steer_encode_rl,mpd.Driver_steer_encode_rr
-    time.sleep(1)
-    mpd.Read_sensor_data_from_driver()
-    # time.sleep(3)
-    # print mpd.Driver_steer_encode_fl,mpd.Driver_steer_encode_fr,mpd.Driver_steer_encode_rl,mpd.Driver_steer_encode_rr
-    mpd.Read_sensor_data_from_driver()
-    print "homing is ok----!!!"
+    while 1:
+        mpd.Read_sensor_data_from_driver()
+        time.sleep(0.3)
+    # time.sleep(1)
+    # mpd.Enable_Motor_Controller_All()
+    # # print mpd.Driver_steer_encode_fl,mpd.Driver_steer_encode_fr,mpd.Driver_steer_encode_rl,mpd.Driver_steer_encode_rr
+    # time.sleep(1)
+    # mpd.Read_sensor_data_from_driver()
+    # # time.sleep(3)
+    # # print mpd.Driver_steer_encode_fl,mpd.Driver_steer_encode_fr,mpd.Driver_steer_encode_rl,mpd.Driver_steer_encode_rr
+    # mpd.Read_sensor_data_from_driver()
+    # print "homing is ok----!!!"
     # while count:
     #     # mpd.Save_Parameter('1')
     #     # time.sleep(1)

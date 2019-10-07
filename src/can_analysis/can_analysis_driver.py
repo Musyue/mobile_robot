@@ -145,9 +145,11 @@ class CanAnalysisDriver:
         if Canstatus== -1:
             self.logger.loggererror("Can analysis offline!")
             self.logger.loggerinfo(Canstatus)
+            return Canstatus
         elif Canstatus==0:
             self.logger.loggererror("Can Analysis Get Receive Num No data")
             self.logger.loggererror(Canstatus)
+            return Canstatus
         else:
             self.logger.loggerinfo("Can Analysis Get Receive Num Success!!")
             self.logger.loggerinfo(Canstatus)

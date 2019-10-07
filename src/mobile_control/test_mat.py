@@ -1,12 +1,15 @@
 #! /usr/bin/env python
 # coding=utf-8
-import matplotlib.pyplot as plt
-import numpy as np
-import time
-from math import *
-def test(rad):
-    return ((rad+pi)%(2.0*pi) - pi)/2.0
-print test(0.03)
+from scipy.io import loadmat
+read_path=loadmat('/data/ros/yue_wk_2019/src/mobile_robot/src/mobile_control/test_path.mat')
+print read_path['pathsmallCirclexythera'],len(read_path['pathsmallCirclexythera'])
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import time
+# from math import *
+# def test(rad):
+#     return ((rad+pi)%(2.0*pi) - pi)/2.0
+# print test(0.03)
 # plt.ion() #开启interactive mode 成功的关键函数
 # plt.figure(1)
 # t = [0]
