@@ -49,7 +49,7 @@ class LoggerSetClass:
             # 再创建一个handler，用于输出到控制台
             ch = logging.StreamHandler()
             # 输出到console的log等级的开关
-            ch.setLevel(logging.ERROR)
+            ch.setLevel(logging.INFO)
             # 控制台输出设定格式
             ch.setFormatter(formatter)
             # 设置控制台输出到logger

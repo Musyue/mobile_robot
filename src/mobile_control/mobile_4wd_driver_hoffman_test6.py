@@ -47,7 +47,9 @@ class AGV4WDICONTROLLER():
         self.index_ref=0
         self.phaRdot=0.08
         self.betaRdot=0
-        self.read_path=loadmat('/data/ros/yue_wk_2019/src/mobile_robot/src/mobile_control/figure_eight_path.mat')
+        self.kk=3
+        self.limit_steer_rad=10
+        self.read_path=loadmat('/data/ros/yue_wk_2019/src/mobile_robot/src/mobile_control/circle_shape_path_1.mat')#figure_eight_path.mat')
         # self.pub_vstar=rospy.Publisher("/vstar",Float64,queue_size=10)
         # self.pub_x=rospy.Publisher("/x",Float64,queue_size=10)
         # self.pub_y=rospy.Publisher("/y",Float64,queue_size=10)
@@ -176,12 +178,12 @@ class AGV4WDICONTROLLER():
         ey1=point_ref[1]-self.odemetry_y
         ex2=cos(point_ref[2])
         ey2=sin(point_ref[2])
-        sinnn=ex1*ey2-ey1*ex2
+        sinnn=-1*(ex1*ey2-ey1*ex2)
         e=self.sign(sinnn)*e
-        self.phi=point_ref[2]- self.odemetry_pha+atan(e)
+        self.phi=point_ref[2]- self.odemetry_pha+atan(self.kk*e/self.vel_reference)
         self.st=tan(self.phi)
-        if abs(self.st)>=1.0:
-            self.st=1.0*self.sign(self.st)
+        if abs(self.st)>=self.limit_steer_rad:
+            self.st=self.limit_steer_rad*self.sign(self.st)
         else:
             self.st=self.st
     def set_array_to_list(self,array_num):

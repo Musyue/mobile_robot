@@ -8,11 +8,11 @@ import os
 from math import *
 from logger_config.logger_set import *
 from config.command import *
-from can_analysis.can_analysis_driver import *
+from can_analysis.can_analysis_driver_zlg import *
 import time
 class MobilePlatformDriver():
     def __init__(self,):
-        self.CanAnalysis=CanAnalysisDriver()
+        self.CanAnalysis=CanAnalysisDriverZlg()
         # self.CanAnalysis.Init_Can_All()
         self.MobileDriver_Command=MobileDriverCommands()
         self.logger=LoggerSetClass(1)
@@ -50,6 +50,8 @@ class MobilePlatformDriver():
     def Init_can(self):
         self.CanAnalysis.Init_Can_All() #初始化can分析仪，注意这里没有关闭分析仪
     def Open_driver_can_Node(self,IDD,Frames_Length):
+        # print "gduabgcfjdqabfqwbh"
+        # print "self.MobileDriver_Command.OPEN_CAN_NODE_DRIVER",self.MobileDriver_Command.OPEN_CAN_NODE_DRIVER
         enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,0,self.Datalen,self.MobileDriver_Command.OPEN_CAN_NODE_DRIVER)
         # time.sleep(0.0015)
     def Close_driver_can_Node(self,IDD,Frames_Length):
@@ -558,11 +560,12 @@ def main():
     flag=0
     mpd.Init_can()
     mpd.Open_driver_can_Node(0x00000000,1)
-    while 1:
-        mpd.Read_sensor_data_from_driver()
-        time.sleep(0.3)
+    mpd.Open_driver_can_Node(0x00000000,1)
+    # while 1:
+    #     mpd.Read_sensor_data_from_driver()
+    #     time.sleep(0.3)
     # time.sleep(1)
-    # mpd.Enable_Motor_Controller_All()
+    mpd.Enable_Motor_Controller_All()
     # # print mpd.Driver_steer_encode_fl,mpd.Driver_steer_encode_fr,mpd.Driver_steer_encode_rl,mpd.Driver_steer_encode_rr
     # time.sleep(1)
     # mpd.Read_sensor_data_from_driver()

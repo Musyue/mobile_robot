@@ -1,4 +1,5 @@
 nDeviceType: 4 #设备类型USBCAN-2A or USBCAN-2C or CANalyst-II
+zlgnDeviceType: 3 #设备类型USBCAN-2A or USBCAN-2C or CANalyst-II
 nDeviceInd: 0 #设备索引
 nCanId: 0 # 0-->1通道 1-->2通道
 sync_data_ID: 0x00000080
