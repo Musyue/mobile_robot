@@ -52,6 +52,16 @@ class MobilePlatformDriver():
     def Open_driver_can_Node(self,IDD,Frames_Length):
         enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,0,self.Datalen,self.MobileDriver_Command.OPEN_CAN_NODE_DRIVER)
         # time.sleep(0.0015)
+    def Clear_all_error_without_disable_driver(self):
+        Mc03=self.Enable_Clear_Motor_controller(self.CanAnalysis.yamlDic['steering_channel_pdo']['front_steering_left_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],0)
+        Mc03=self.Enable_Clear_Motor_controller(self.CanAnalysis.yamlDic['steering_channel_pdo']['front_steering_right_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],0)
+        Mc03=self.Enable_Clear_Motor_controller(self.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_left_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],0)
+        Mc03=self.Enable_Clear_Motor_controller(self.CanAnalysis.yamlDic['steering_channel_pdo']['rear_steering_right_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],0)
+        Mc03=self.Enable_Clear_Motor_controller(self.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_left_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],1)
+        Mc03=self.Enable_Clear_Motor_controller(self.CanAnalysis.yamlDic['walking_channel_pdo']['front_walking_right_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],1)
+        Mc03=self.Enable_Clear_Motor_controller(self.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_left_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],1)
+        Mc03=self.Enable_Clear_Motor_controller(self.CanAnalysis.yamlDic['walking_channel_pdo']['rear_walking_right_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],1)
+
     def Close_driver_can_Node(self,IDD,Frames_Length):
         enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,0,self.Datalen,self.MobileDriver_Command.CLOSE_CAN_NODE_DRIVER)
         # time.sleep(0.0015)
@@ -66,7 +76,17 @@ class MobilePlatformDriver():
         else:
             enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,IDD,self.Datalen,self.MobileDriver_Command.ENABLE_DRIVER_SET_POSITION)
             # time.sleep(0.0015)
-        
+    def Enable_Clear_Motor_controller(self,IDD,Frames_Length,flag):
+        """
+        flag=1,velocity
+        flag=0,postion
+        """
+        if flag:
+            enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,IDD,self.Datalen,self.MobileDriver_Command.CLEAR_ERROR_WITHOUT_DISABLE)
+            # time.sleep(0.0015)
+        else:
+            enbalecomd1=self.CanAnalysis.Can_Transmit(self.CanAnalysis.yamlDic['nCanId'],Frames_Length,IDD,self.Datalen,self.MobileDriver_Command.CLEAR_ERROR_WITHOUT_DISABLE)
+            # time.sleep(0.0015)        
     def Enable_Steering_Controller(self,flag):
         self.logger.loggerinfo("Enable Steering Motor Controller","GREEN")
         Mc03=self.Enable_Motor_controller(self.CanAnalysis.yamlDic['steering_channel_pdo']['front_steering_left_rpdo']['rpdo']['rpdo1'],self.CanAnalysis.yamlDic['Frames_Length'],flag)

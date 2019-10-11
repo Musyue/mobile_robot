@@ -23,6 +23,7 @@ class AGV4WDICONTROLLER():
         self.wheel_R=0.15/2#m
         self.car_length=0.5
         self.car_width=0.395
+        rospy.init_node("imu_data_for_mobileplatform")
         self.imu_sub=rospy.Subscriber('/imu_data',Imu,self.Imu_callback)
         self.path_sub=rospy.Subscriber('/path_target',Path,self.PathTarget_callback)
         self.cmd_vel_sub=rospy.Subscriber('/cmd_vel',Twist,self.CmdVel_callback)
@@ -70,9 +71,9 @@ class AGV4WDICONTROLLER():
         self.betaRdot=0
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
-        self.tranformtfs=""
-        self.tranformtft=''
-        self.trans = tfBuffer.lookup_transform(self.tranformtfs, self.tranformtft, rospy.Time())
+        self.tranformtfs="map"
+        self.tranformtft='base_link'
+        self.trans = self.tfBuffer.lookup_transform(self.tranformtfs, self.tranformtft, rospy.Time())
         #trans.transform.translation.y, trans.transform.translation.x
         self.read_path=loadmat('/data/ros/yue_wk_2019/src/mobile_robot/src/mobile_control/test_path.mat')
         # self.pub_vstar=rospy.Publisher("/vstar",Float64,queue_size=10)
@@ -300,8 +301,9 @@ class AGV4WDICONTROLLER():
         return [Vfl,Vfr,Vrl,Vrr,detafl,detafr,detarl,detarr]
 def main():
    agvobj=AGV4WDICONTROLLER()
-   agvobj.Init_Node()
-   time.sleep(3)
+#    agvobj.Init_Node()
+#    rospy.init_node("imu_data_for_mobileplatform")
+#    time.sleep(3)
    ratet=1
    rate=rospy.Rate(ratet)
    zerotime=time.time()
@@ -326,6 +328,7 @@ def main():
    flaggg=1
    pathfilename='pathsmallCirclexythera'
    while not rospy.is_shutdown():
+        # print "haha"
         rospy.logerr(agvobj.trans.transform.translation.y)
         # recevenum=agvobj.mpfh.CanAnalysis.Can_GetReceiveNum(0)
         # starttime=time.time()
