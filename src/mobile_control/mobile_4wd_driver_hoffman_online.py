@@ -41,7 +41,7 @@ class AGV4WDICONTROLLER():
         self.odemetry_y=0.0#self.trans.transform.translation.y
         self.odemetry_pha=0.0#3.14
         self.odemetry_beta=0.0
-        self.vel_reference=0.3#0.5
+        self.vel_reference=1.5#0.5
         self.reference_x=0
         self.reference_y=0
         self.reference_pha=0
@@ -67,8 +67,8 @@ class AGV4WDICONTROLLER():
         self.index_ref=0
         self.phaRdot=0.08
         self.betaRdot=0
-        self.kk=5
-        self.limit_steer_rad=0.8
+        self.kk=10
+        self.limit_steer_rad=10
         self.path_all=[]
         self.read_path=loadmat('/data/ros/yue_wk_2019/src/mobile_robot/src/mobile_control/circle_shape_path_2.mat')#figure_eight_path.mat')
         # self.pub_vstar=rospy.Publisher("/vstar",Float64,queue_size=10)
@@ -83,7 +83,7 @@ class AGV4WDICONTROLLER():
         self.pub_Vfr=rospy.Publisher("/vfr",Float64,queue_size=10)
         self.pub_Vrl=rospy.Publisher("/vrl",Float64,queue_size=10)
         self.pub_Vrr=rospy.Publisher("/vrr",Float64,queue_size=10)
-        self.pub_angular_error=rospy.Publisher("/angular_error",Float64,queue_size=10)
+        self.pub_angular_error=rospy.Publisher("/angular_phi",Float64,queue_size=10)
         self.pub_error=rospy.Publisher("/distance_error",Float64,queue_size=10)
         self.pub_detafl=rospy.Publisher("/detafl",Float64,queue_size=10)
         self.pub_detafr=rospy.Publisher("/detafr",Float64,queue_size=10)
@@ -154,7 +154,7 @@ class AGV4WDICONTROLLER():
         self.odemetry_theta=theta  
     def andiff(self,th1,th2):
         d=th1-th2
-        print "----d------",d
+        print("----d------",d)
         return  d#self.mod_function(d+pi, 2*pi) - pi
 
     def Caculate_velocity_from_angular_z(self,angular_velocity_z,gamma_rad):
@@ -241,46 +241,19 @@ class AGV4WDICONTROLLER():
         ey2=sin(point_ref[2])
         sinnn=-1*(ex1*ey2-ey1*ex2)
         e=self.sign(sinnn)*e
-        self.phi=self.Set_rad_in_pi(point_ref[2]- self.odemetry_pha+atan(self.kk*e/self.vel_reference))
-        self.pub_angular_error.publish(self.phi)
-        self.st=tan(self.phi)
-        if abs(self.st)>=self.limit_steer_rad:
-            self.st=self.limit_steer_rad*self.sign(self.st)
-        else:
-            self.st=self.st
-        
-    def hoffman_control(self,point_ref_all,dt):
-        self.odemetry_x=self.odemetry_x+self.vel_reference*cos(self.odemetry_pha)*dt
-        self.odemetry_y=self.odemetry_y+self.vel_reference*sin(self.odemetry_pha)*dt
-        self.odemetry_pha=self.odemetry_pha+self.vel_reference*(1.0/self.car_length)*self.st*dt
-        self.odemetry_pha=self.Set_rad_in_pi(self.odemetry_pha)
-        e=sqrt((self.odemetry_x-point_ref_all[0][0])**2+(self.odemetry_y-point_ref_all[0][1])**2)
-        for i in range(2,len(point_ref_all)):
-            etmp=sqrt((self.odemetry_x-point_ref_all[i][0])**2+(self.odemetry_y-point_ref_all[i][1])**2)
-            if etmp<e:
-                e=etmp
-                self.index_ref=i
-        print("self.index_ref",self.index_ref)
-        point_ref=point_ref_all[self.index_ref]
-        ex1=point_ref[0]-self.odemetry_x
-        ey1=point_ref[1]-self.odemetry_y
-        self.pub_xr.publish(point_ref[0])
-        self.pub_yr.publish(point_ref[1])
-        self.pub_target_pha.publish(point_ref[2])
-        ex2=cos(point_ref[2])
-        ey2=sin(point_ref[2])
-        sinnn=-1*(ex1*ey2-ey1*ex2)
-        e=self.sign(sinnn)*e
         self.phi=point_ref[2]- self.odemetry_pha+atan(self.kk*e/self.vel_reference)
         self.st=tan(self.phi)
-        if abs(self.st)>=self.limit_steer_rad:
+        if abs(tan(self.st))>=self.limit_steer_rad:
             self.st=self.limit_steer_rad*self.sign(self.st)
         else:
             self.st=self.st
+        self.phi=atan(self.st)
+        self.pub_angular_error.publish(self.phi)
+
     def target_distance_error(self,x,y):
         e=sqrt((self.path_all[-1][0]-x)**2+(self.path_all[-1][1]-y)**2)
         self.pub_error.publish(e)
-        if e<0.08:
+        if e<0.1:
             print("distance in line error----")
             return True
         else:
@@ -364,7 +337,6 @@ def main():
                 agvobj.hoffman_control_tf2(agvobj.path_all,odemetry_xx,odemetry_yy,odemetry_pha_pha)
                 if agvobj.target_distance_error(odemetry_xx,odemetry_yy):
                     print("------walking wheel------")
-
                     agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1,0.0)
                     time.sleep(1)
                     flagg=0
@@ -406,6 +378,7 @@ def main():
             else:
                 if flagg==0:
                     agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1,0.0)
+                    agvobj.mpfh.Send_diff_degree_position_to_four_steering_wheel(ratation_flag,[0.0,0.0,0.0,0.0])
                 agvobj.mpfh.Send_Control_Command(agvobj.mpfh.CanAnalysis.yamlDic['sync_data_ID'], agvobj.mpfh.MobileDriver_Command.ZERO_COMMAND)
                 print("---------read data----")
             endtime=time.time()
