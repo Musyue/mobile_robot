@@ -358,6 +358,7 @@ CTRL-C to quit
         self.MobileControl.Init_can()
         self.MobileControl.Open_driver_can_Node(0x00000000,1)
         self.MobileControl.Clear_all_error_without_disable_driver()
+        self.MobileControl.Clear_all_error_without_disable_driver()
         self.MobileControl.Enable_Motor_Controller_All()
         self.MobileControl.Send_trapezoid_Velocity(2500)
         # self.MobileControl.Enable_Walking_Controller()
