@@ -18,6 +18,7 @@ class MobilePlatformDriver():
         self.logger=LoggerSetClass(1)
         self.Datalen=8
         ###walking
+        self.wheel_R=0.15/2
         self.Driver_walk_encode_fl=0
         self.Driver_walk_encode_fr=0
         self.Driver_walk_encode_rl=0
@@ -432,7 +433,8 @@ class MobilePlatformDriver():
         else:
             return NEWCMD
     def caculate_velocity(self,vel):
-        return (60*vel)/(0.15*pi)
+        # return (60*vel)/(0.15*pi)
+        return (60*vel*20.15)/(2*pi*self.wheel_R)
     def rad_to_pulse(self,rad):
         #rad 弧度
         return (rad*(220*1024*4.0)/(2.0*pi))

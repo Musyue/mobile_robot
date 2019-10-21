@@ -23,7 +23,7 @@ class AGV4WDICONTROLLER():
         self.car_width=0.395
         self.imu_sub=rospy.Subscriber('/imu_data',Imu,self.Imu_callback)
         self.cmd_vel_sub=rospy.Subscriber('/cmd_vel',Twist,self.CmdVel_callback)
-        self.path_sub=rospy.Subscriber('/smooth_path',Path,self.PathTarget_callback)
+        self.path_sub=rospy.Subscriber('/mobile_base_path',Path,self.PathTarget_callback)
         self.ImuOrientation=()
         self.ImuAngularvelocity=()
         self.ImuLinearAcceleration=()
@@ -41,7 +41,7 @@ class AGV4WDICONTROLLER():
         self.odemetry_y=0.0#self.trans.transform.translation.y
         self.odemetry_pha=0.0#3.14
         self.odemetry_beta=0.0
-        self.vel_reference=0.1#1.5#0.5
+        self.vel_reference=0.05#1.5#0.5
         self.reference_x=0
         self.reference_y=0
         self.reference_pha=0
@@ -67,8 +67,8 @@ class AGV4WDICONTROLLER():
         self.index_ref=0
         self.phaRdot=0.08
         self.betaRdot=0
-        self.kk=10
-        self.limit_steer_rad=1
+        self.kk=0.1
+        self.limit_steer_rad=10
         self.path_all=[]
         self.read_path=loadmat('/data/ros/yue_wk_2019/src/mobile_robot/src/mobile_control/circle_shape_path_2.mat')#figure_eight_path.mat')
         # self.pub_vstar=rospy.Publisher("/vstar",Float64,queue_size=10)
@@ -84,9 +84,14 @@ class AGV4WDICONTROLLER():
         self.pub_Vrl=rospy.Publisher("/vrl",Float64,queue_size=10)
         self.pub_Vrr=rospy.Publisher("/vrr",Float64,queue_size=10)
         self.pub_angular_error=rospy.Publisher("/angular_phi",Float64,queue_size=10)
+        self.pub_angular_e=rospy.Publisher("/angular_e",Float64,queue_size=10)
         self.pub_error=rospy.Publisher("/distance_error",Float64,queue_size=10)
         self.pub_detafl=rospy.Publisher("/detafl",Float64,queue_size=10)
         self.pub_detafr=rospy.Publisher("/detafr",Float64,queue_size=10)
+        self.pub_detarl=rospy.Publisher("/detarl",Float64,queue_size=10)
+        self.pub_detarr=rospy.Publisher("/detarr",Float64,queue_size=10)
+        self.pub_detafl_initial=rospy.Publisher("/detafli",Float64,queue_size=10)
+        self.pub_detafr_initial=rospy.Publisher("/detafri",Float64,queue_size=10)
         # Vfl,Vfr,Vrl,Vrr,detafl,detafr,detarl,detarr
         self.target_path=[]
         self.homing_original_position=[self.mpfh.Driver_steer_encode_fl_original,self.mpfh.Driver_steer_encode_fr_original,self.mpfh.Driver_steer_encode_rl_original,self.mpfh.Driver_steer_encode_rr_original]
@@ -252,7 +257,8 @@ class AGV4WDICONTROLLER():
         ey2=sin(point_ref[2])
         sinnn=-1*(ex1*ey2-ey1*ex2)
         e=self.sign(sinnn)*e
-        # limit_degree=80.0
+        self.pub_angular_e.publish(e)
+        # limit_degree=30.0
         # temp_phi=point_ref[2]- self.odemetry_pha+atan(self.kk*e/self.vel_reference)
         # if abs(temp_phi)>(limit_degree*pi/180):
         #     if temp_phi>0.0:
@@ -277,7 +283,7 @@ class AGV4WDICONTROLLER():
     def target_distance_error(self,x,y):
         e=sqrt((self.path_all[-1][0]-x)**2+(self.path_all[-1][1]-y)**2)
         self.pub_error.publish(e)
-        if e<0.1:
+        if e<0.15:
             print("distance in line error----")
             return True
         else:
@@ -302,6 +308,46 @@ class AGV4WDICONTROLLER():
         self.pub_Vrr.publish(Vrr)
         self.pub_detafl.publish(detafl)
         self.pub_detafr.publish(detafr)
+        return [Vfl,Vfr,Vrl,Vrr,detafl,detafr,detarl,detarr]
+    def hoffman_kinematic_model_new(self,VC,phi_ref):
+        Vfl=VC*sqrt((0.5*self.car_length)**2+(0.5*self.car_length/tan(phi_ref)-self.car_width/2.0)**2)/(0.5*self.car_length/tan(phi_ref))
+        Vfr=VC*sqrt((0.5*self.car_length)**2+(0.5*self.car_length/tan(phi_ref)+self.car_width/2.0)**2)/(0.5*self.car_length/tan(phi_ref))#VC*sqrt(self.car_length**2+(self.car_length/tan(phi_ref)-self.car_width/2.0)**2)/(self.car_length/tan(phi_ref))
+        Vrl=Vfl#VC*(self.car_length/tan(phi_ref)+self.car_width/2.0)/(self.car_length/tan(phi_ref))
+        Vrr=Vfr#VC*(self.car_length/tan(phi_ref)-self.car_width/2.0)/(self.car_length/tan(phi_ref))
+
+        detafl=atan(0.5*self.car_length/(0.5*self.car_length/tan(phi_ref)-self.car_width/2.0))
+        detafr=atan(0.5*self.car_length/(0.5*self.car_length/tan(phi_ref)+self.car_width/2.0))
+        self.pub_detafl_initial.publish(detafl)
+        self.pub_detafr_initial.publish(detafr)
+        limit_degree=30.0
+        if abs(detafl)>(limit_degree*pi/180):
+            if detafl>0.0:
+                detafl=limit_degree*pi/180
+            elif detafl<0.0:
+                detafl=-limit_degree*pi/180
+            else:
+                detafl=0.0
+        else:
+            detafl=detafl
+        if abs(detafr)>(limit_degree*pi/180):
+            if detafr>0.0:
+                detafr=limit_degree*pi/180
+            elif detafr<0.0:
+                detafr=-limit_degree*pi/180
+            else:
+                detafr=0.0
+        else:
+            detafr=detafr
+        detarl=-detafl
+        detarr=-detafr
+        self.pub_Vfl.publish(Vfl)
+        self.pub_Vfr.publish(Vfr)
+        self.pub_Vrl.publish(Vrl)
+        self.pub_Vrr.publish(Vrr)
+        self.pub_detafl.publish(detafl)
+        self.pub_detafr.publish(detafr)
+        self.pub_detarl.publish(detarl)
+        self.pub_detarr.publish(detarr)
         return [Vfl,Vfr,Vrl,Vrr,detafl,detafr,detarl,detarr]
 def main():
    agvobj=AGV4WDICONTROLLER()
@@ -380,7 +426,7 @@ def main():
                     # VC=(agvobj.sign(Vri)*Vri+agvobj.sign(Vro)*Vro)/2.
                     VC=agvobj.vel_reference
                     print("VC-------",VC)
-                    v_deta=agvobj.hoffman_kinematic_model(VC,agvobj.phi)
+                    v_deta=agvobj.hoffman_kinematic_model_new(VC,agvobj.phi)
                     print("four velocity and four steer---",v_deta)
                     wheel_diretion_flg=[-1.0,1.0,-1.0,1.0]
                     wheel_diretion_flg1=[1.0,1.0,1.0,1.0]
