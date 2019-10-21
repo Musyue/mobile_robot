@@ -70,7 +70,7 @@ class AGV4WDICONTROLLER():
         self.kk=0.1
         self.limit_steer_rad=10
         self.path_all=[]
-        self.read_path=loadmat('/data/ros/yue_wk_2019/src/mobile_robot/src/mobile_control/circle_shape_path_2.mat')#figure_eight_path.mat')
+        # self.read_path=loadmat('/data/ros/yue_wk_2019/src/mobile_robot/src/mobile_control/circle_shape_path_2.mat')#figure_eight_path.mat')
         # self.pub_vstar=rospy.Publisher("/vstar",Float64,queue_size=10)
         self.pub_xr=rospy.Publisher("/xr",Float64,queue_size=10)
         self.pub_yr=rospy.Publisher("/yr",Float64,queue_size=10)
@@ -86,6 +86,7 @@ class AGV4WDICONTROLLER():
         self.pub_angular_error=rospy.Publisher("/angular_phi",Float64,queue_size=10)
         self.pub_angular_e=rospy.Publisher("/angular_e",Float64,queue_size=10)
         self.pub_error=rospy.Publisher("/distance_error",Float64,queue_size=10)
+        self.pub_pha_error=rospy.Publisher("/pha_error",Float64,queue_size=10)
         self.pub_detafl=rospy.Publisher("/detafl",Float64,queue_size=10)
         self.pub_detafr=rospy.Publisher("/detafr",Float64,queue_size=10)
         self.pub_detarl=rospy.Publisher("/detarl",Float64,queue_size=10)
@@ -271,7 +272,7 @@ class AGV4WDICONTROLLER():
         e=sqrt((self.path_all[-1][0]-x)**2+(self.path_all[-1][1]-y)**2)
         return e
     def traget_pha_error(self,real_pha,target_pha):
-        return real_pha-target_pha
+        return -real_pha+target_pha
     def set_array_to_list(self,array_num):
         newtemp=[]
         for i in range(len(array_num)):
@@ -322,27 +323,27 @@ class AGV4WDICONTROLLER():
         target_xy_pha-->[x,y]
         """
         if target_xy_pha[0]-real_xy_pha[0]!=0 and target_xy_pha[1]-real_xy_pha[1]!=0:
-            return atan((target_xy_pha[1]-real_xy_pha[1])/(target_xy_pha[0]-real_xy_pha[0]))
+            return atan((target_xy_pha[1]-real_xy_pha[1])/(target_xy_pha[0]-real_xy_pha[0]))-real_xy_pha[2]
         elif target_xy_pha[0]-real_xy_pha[0]==0 and target_xy_pha[1]-real_xy_pha[1]!=0:
             if target_xy_pha[1]-real_xy_pha[1]>0 and self.sign(target_xy_pha[2])==self.sign(real_xy_pha[2]):#pha have same symbol
-                return pi/2
+                return pi/2-real_xy_pha[2]
             elif target_xy_pha[1]-real_xy_pha[1]<0 and self.sign(target_xy_pha[2])==self.sign(real_xy_pha[2]):
-                return -pi/2
+                return -pi/2-real_xy_pha[2]
             elif target_xy_pha[1]-real_xy_pha[1]>0 and self.sign(target_xy_pha[2])!=self.sign(real_xy_pha[2]):
-                return -pi/2
+                return -pi/2-real_xy_pha[2]
             else:# target_xy_pha[1]-real_xy_pha[1]<0 and self.sign(target_xy_pha[2])!=self.sign(real_xy_pha[2]):
-                return pi/2
+                return pi/2-real_xy_pha[2]
         elif target_xy_pha[0]-real_xy_pha[0]!=0 and target_xy_pha[1]-real_xy_pha[1]==0:
             if target_xy_pha[0]-real_xy_pha[0]>0 and self.sign(target_xy_pha[2])==self.sign(real_xy_pha[2]):#pha have same symbol
-                return 0.0
+                return 0.0-real_xy_pha[2]
             elif target_xy_pha[0]-real_xy_pha[0]<0 and self.sign(target_xy_pha[2])==self.sign(real_xy_pha[2]):
-                return pi
+                return pi-real_xy_pha[2]
             elif target_xy_pha[0]-real_xy_pha[0]>0 and self.sign(target_xy_pha[2])!=self.sign(real_xy_pha[2]):
-                return 0.0
+                return 0.0-real_xy_pha[2]
             else:# target_xy_pha[1]-real_xy_pha[1]<0 and self.sign(target_xy_pha[2])!=self.sign(real_xy_pha[2]):
-                return pi
+                return pi-real_xy_pha[2]
         else:
-            return 0.0
+            return 0.0-real_xy_pha[2]
 
 def main():
    agvobj=AGV4WDICONTROLLER()
@@ -368,13 +369,13 @@ def main():
    flaggg=1
    pathfilename='path'#'pathsmallCirclexythera'
    limit_error_rad_for_start_point=0.3#rad
-   rotation_velocity=0.08
+   rotation_velocity=0.02
    flag_path_tracking=0
    flag_send_ref_velocity_for_onece=0
    flag_close_all=1
    limit_error_trans=0.5
    flag_for_servo_to_end_point=0
-   limit_error_distance=0.08
+   limit_error_distance=0.15
    limit_error_for_pha=0.4
    flag_open_servo_pha=0.0
    flag_open_pi_4=0.0
@@ -398,17 +399,22 @@ def main():
                 rr,pp,yy=euler_from_quaternion(ratation_quaternion)
                 print("mobile real -----rpy----",rr,pp,yy)
                 odemetry_pha_pha=yy
-
-                if flag_for_servo_first_step==0 and abs(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))>=limit_error_rad_for_start_point:
+                agvobj.pub_x.publish(agvobj.odemetry_x)
+                agvobj.pub_y.publish(agvobj.odemetry_y)
+                agvobj.pub_real_pha.publish(agvobj.odemetry_pha)
+                if flag_for_servo_first_step==0 and abs(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))>limit_error_rad_for_start_point:
                     rospy.loginfo("------First: Servo to the latest pha error with mobile coordinate------")
+                    agvobj.pub_pha_error.publish(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))
                     if flag_go_x_shape==0:
                         agvobj.mpfh.Send_same_degree_position_to_four_steering_wheel([1.0,-1.0,-1.0,1.0],pi/4)
+                        time.sleep(1)
                         flag_go_x_shape=1
-                    if agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha)>0.0:
+                    if agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha)>0.3:
+                        print("agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha)",agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))
                         agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],1.0,rotation_velocity)#clockwise
                     else:
-                        agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],-1.0,rotation_velocity)#anticlockwise
-                elif flag_for_servo_first_step==0 and abs(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))<limit_error_rad_for_start_point:
+                        agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],-1.0,rotation_velocity)#anticlockwise#change the speed flag to positive we need -1.0
+                elif flag_for_servo_first_step==0 and abs(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))<=limit_error_rad_for_start_point:
                     agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1,0.0)
                     agvobj.mpfh.Send_diff_degree_position_to_four_steering_wheel([-1.0,-1.0,-1.0,-1.0],[0.0,0.0,0.0,0.0])
                     flag_for_servo_first_step=1
@@ -426,12 +432,14 @@ def main():
                     if agvobj.target_distance_error(limit_error_trans,odemetry_xx,odemetry_yy):
                         rospy.loginfo("------Second: Path tracking End------")
                         agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1,0.0)
+                        agvobj.mpfh.Send_same_degree_position_to_four_steering_wheel([-1.0,-1.0,-1.0,-1.0],0.0)
+                        time.sleep(2)
                         # time.sleep(1)
                         flag_path_tracking=0
                         flag_for_servo_to_end_point=1
                         # flag_close_all=0
                     velocity_real_time=agvobj.Caculate_velocity_from_RPM()
-                    if len(velocity_real_time)!=0:
+                    if len(velocity_real_time)!=0 and flag_path_tracking==1:
                         rad_real_time=agvobj.Caculate_rad_from_position_data()
                         print("velocity_real_time",velocity_real_time)
                         print("rad_real_time",rad_real_time)
@@ -461,37 +469,45 @@ def main():
                         four_steer_degree_theta=v_deta[4:]
                         agvobj.mpfh.Send_diff_degree_position_to_four_steering_wheel(ratation_flag,four_steer_degree_theta)
 
-                        agvobj.pub_x.publish(agvobj.odemetry_x)
-                        agvobj.pub_y.publish(agvobj.odemetry_y)
-                        agvobj.pub_real_pha.publish(agvobj.odemetry_pha)
+
                 if flag_for_servo_to_end_point:
                     rospy.loginfo("------Third: Servo to end point with ------")
+                    # rospy.loginfo("distance error----",agvobj.target_distance_error_data(odemetry_xx,odemetry_yy))
+                    print("abs(agvobj.target_distance_error_data(odemetry_xx,odemetry_yy))",abs(agvobj.target_distance_error_data(odemetry_xx,odemetry_yy)))
+                    agvobj.pub_error.publish(agvobj.target_distance_error_data(odemetry_xx,odemetry_yy))
                     if abs(agvobj.target_distance_error_data(odemetry_xx,odemetry_yy))>=limit_error_distance:
                         phi_to_endpoint=agvobj.caculate_target_to_real_angular([agvobj.path_all[-1][0],agvobj.path_all[-1][1],agvobj.path_all[-1][2]],[agvobj.odemetry_x,agvobj.odemetry_y,agvobj.odemetry_pha])
                         agvobj.mpfh.Send_same_degree_position_to_four_steering_wheel([-1.0,-1.0,-1.0,-1.0],phi_to_endpoint)
                         agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1,rotation_velocity)
                     else:
+                        print("------------------in------third-------status---------")
                         agvobj.mpfh.Send_same_degree_position_to_four_steering_wheel([-1.0,-1.0,-1.0,-1.0],0.0)
                         agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1,0.0)
+                        agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1,0.0)
+                        time.sleep(1.5)
                         flag_open_servo_pha=1
                         flag_for_servo_to_end_point=0
                 if flag_open_servo_pha:
+                    print("abs(agvobj.path_all[-1][2]-agvobj.odemetry_pha)",abs(agvobj.path_all[-1][2]-agvobj.odemetry_pha))
+                    agvobj.pub_pha_error.publish(agvobj.path_all[-1][2]-agvobj.odemetry_pha)
                     if abs(agvobj.path_all[-1][2]-agvobj.odemetry_pha)>=limit_error_for_pha:
                         if flag_open_pi_4==0:
                             agvobj.mpfh.Send_same_degree_position_to_four_steering_wheel([1.0,-1.0,-1.0,1.0],pi/4)
+                            time.sleep(2)
                             flag_open_pi_4=1
                         if agvobj.path_all[-1][2]-agvobj.odemetry_pha>0.0 and agvobj.sign(agvobj.path_all[-1][2])==agvobj.sign(agvobj.odemetry_pha):
-                            agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],-1.0,rotation_velocity)
+                            agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],1.0,rotation_velocity)
                         elif agvobj.path_all[-1][2]-agvobj.odemetry_pha<0.0 and agvobj.sign(agvobj.path_all[-1][2])==agvobj.sign(agvobj.odemetry_pha):
-                            agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1.0,rotation_velocity)
+                            agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],-1.0,rotation_velocity)
                         elif agvobj.path_all[-1][2]-agvobj.odemetry_pha>0.0 and agvobj.sign(agvobj.path_all[-1][2])!=agvobj.sign(agvobj.odemetry_pha):
-                            agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1.0,rotation_velocity)
+                            agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],-1.0,rotation_velocity)
                         else:
-                            agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],-1.0,rotation_velocity)
+                            agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],1.0,rotation_velocity)
                     else:
                         flag_open_servo_pha=0
                         agvobj.mpfh.Send_same_degree_position_to_four_steering_wheel([-1.0,-1.0,-1.0,-1.0],0.0)
                         agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1,0.0)
+                        time.sleep(2)
                         flag_close_all=0
                 count+=1
                 print("count",count)

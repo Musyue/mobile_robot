@@ -418,7 +418,7 @@ def main():
         'r':(0,0),
         'b':(0,0)
            }
-    speed = .1
+    speed = .01
     turn = 0.01
     flg=1
     flag=1
