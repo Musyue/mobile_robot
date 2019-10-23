@@ -41,7 +41,7 @@ class AGV4WDICONTROLLER():
         self.odemetry_y=0.0#self.trans.transform.translation.y
         self.odemetry_pha=0.0#3.14
         self.odemetry_beta=0.0
-        self.vel_reference=0.05#1.5#0.5
+        self.vel_reference=0.25#1.5#0.5
         self.reference_x=0
         self.reference_y=0
         self.reference_pha=0
@@ -93,6 +93,8 @@ class AGV4WDICONTROLLER():
         self.pub_detarr=rospy.Publisher("/detarr",Float64,queue_size=10)
         self.pub_detafl_initial=rospy.Publisher("/detafli",Float64,queue_size=10)
         self.pub_detafr_initial=rospy.Publisher("/detafri",Float64,queue_size=10)
+        self.pub_rotation_linear_velocity=rospy.Publisher("/rotation_linear_velocity",Float64,queue_size=10)
+        self.pub_rotation_acumulation_error=rospy.Publisher("/rotation_acumulation_error",Float64,queue_size=10)
         # Vfl,Vfr,Vrl,Vrr,detafl,detafr,detarl,detarr
         self.target_path=[]
         self.homing_original_position=[self.mpfh.Driver_steer_encode_fl_original,self.mpfh.Driver_steer_encode_fr_original,self.mpfh.Driver_steer_encode_rl_original,self.mpfh.Driver_steer_encode_rr_original]
@@ -119,7 +121,7 @@ class AGV4WDICONTROLLER():
             orientation_list = [self.pose_quaternion_x, self.pose_quaternion_y, self.pose_quaternion_z,self.pose_quaternion_w]
             (self.roll,self.pitch,self.yaw) = euler_from_quaternion (orientation_list)
             self.path_all.append([self.pose_x,self.pose_y,self.yaw])
-            print("-------path---data----",[self.pose_x,self.pose_y,self.pose_z,self.roll,self.pitch,self.yaw])
+            # print("-------path---data----",[self.pose_x,self.pose_y,self.pose_z,self.roll,self.pitch,self.yaw])
     def Avage_list(self,listdata,appendata):
         if len(listdata)>10:
             listdata=listdata[1:]
@@ -368,8 +370,8 @@ def main():
    flagg=1
    flaggg=1
    pathfilename='path'#'pathsmallCirclexythera'
-   limit_error_rad_for_start_point=0.3#rad
-   rotation_velocity=0.02
+   limit_error_rad_for_start_point=0.1#rad
+   rotation_velocity=0.5
    flag_path_tracking=0
    flag_send_ref_velocity_for_onece=0
    flag_close_all=1
@@ -379,6 +381,11 @@ def main():
    limit_error_for_pha=0.4
    flag_open_servo_pha=0.0
    flag_open_pi_4=0.0
+   first_step_roation_linear_velocity=0
+   first_step_roation_kp=1/(2*pi)
+   first_step_roation_ki=0.1/(2*pi)
+   first_step_roation_error=0
+   first_step_roation_error_max=10.0
    while not rospy.is_shutdown():
         if len(agvobj.path_all)!=0:
             try:
@@ -399,27 +406,38 @@ def main():
                 rr,pp,yy=euler_from_quaternion(ratation_quaternion)
                 print("mobile real -----rpy----",rr,pp,yy)
                 odemetry_pha_pha=yy
-                agvobj.pub_x.publish(agvobj.odemetry_x)
-                agvobj.pub_y.publish(agvobj.odemetry_y)
-                agvobj.pub_real_pha.publish(agvobj.odemetry_pha)
+                agvobj.pub_x.publish(odemetry_xx)
+                agvobj.pub_y.publish(odemetry_yy)
+                agvobj.pub_real_pha.publish(odemetry_pha_pha)
+                agvobj.pub_pha_error.publish(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))
+                first_step_roation_error+=agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha)*dt
+                if first_step_roation_error>=first_step_roation_error_max:
+                    first_step_roation_error=0
+                first_step_roation_linear_velocity=first_step_roation_kp*abs(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))+first_step_roation_ki*first_step_roation_error
+                agvobj.pub_rotation_acumulation_error.publish(first_step_roation_error)
+                # first_step_roation_linear_velocity=first_step_roation_k*abs(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))
+                agvobj.pub_rotation_linear_velocity.publish(first_step_roation_linear_velocity)
+                print("agvobj.path_all[0][2],odemetry_pha_pha,error",agvobj.path_all[0][2],odemetry_pha_pha,agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))
                 if flag_for_servo_first_step==0 and abs(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))>limit_error_rad_for_start_point:
                     rospy.loginfo("------First: Servo to the latest pha error with mobile coordinate------")
+                   
                     agvobj.pub_pha_error.publish(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))
                     if flag_go_x_shape==0:
                         agvobj.mpfh.Send_same_degree_position_to_four_steering_wheel([1.0,-1.0,-1.0,1.0],pi/4)
                         time.sleep(1)
                         flag_go_x_shape=1
-                    if agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha)>0.3:
+                    if agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha)>0.0:
                         print("agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha)",agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))
-                        agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],1.0,rotation_velocity)#clockwise
+                        agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],1.0,first_step_roation_linear_velocity)#clockwise
                     else:
-                        agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],-1.0,rotation_velocity)#anticlockwise#change the speed flag to positive we need -1.0
+                        agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,-1.0,-1.0,-1.0],-1.0,first_step_roation_linear_velocity)#anticlockwise#change the speed flag to positive we need -1.0
                 elif flag_for_servo_first_step==0 and abs(agvobj.traget_pha_error(agvobj.path_all[0][2],odemetry_pha_pha))<=limit_error_rad_for_start_point:
                     agvobj.mpfh.Send_same_velocity_to_four_walking_wheel([-1.0,1.0,-1.0,1.0],1,0.0)
                     agvobj.mpfh.Send_diff_degree_position_to_four_steering_wheel([-1.0,-1.0,-1.0,-1.0],[0.0,0.0,0.0,0.0])
+                    time.sleep(2)
                     flag_for_servo_first_step=1
-                    flag_path_tracking=1
-                    flag_send_ref_velocity_for_onece=1
+                    flag_path_tracking=0
+                    flag_send_ref_velocity_for_onece=0
                 else:
                     pass
                 if flag_send_ref_velocity_for_onece:
@@ -519,6 +537,7 @@ def main():
                 print("---------read data----")
             endtime=time.time()
             dt=endtime-starttime
+            print("-----------dt------",dt)
             # agvobj.
         else:
             print("----wait path----",agvobj.path_all)
